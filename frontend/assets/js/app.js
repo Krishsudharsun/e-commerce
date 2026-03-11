@@ -97,45 +97,129 @@ document.addEventListener('DOMContentLoaded', () => {
 
   startAutoSlide();
 
+  // ─────────────────────────────────────────
+  // 3. PRODUCT CARD SLIDER
+  // ─────────────────────────────────────────
+
+  const cardWrapper = document.getElementById("sliderTrack");
+  const cards = cardWrapper.querySelectorAll(".deal-card");
+
+  const cardPrevBtn = document.getElementById("homeItemsPrevBtn");
+  const cardNextBtn = document.getElementById("homeItemsNextBtn");
+
+  let cardIndex = 0;
+
+  const cardWidth = cards[0].offsetWidth + 16;
+  const cardsVisible = 4;
+  const maxIndex = cards.length - cardsVisible;
+
+  function moveCardSlider() {
+    cardWrapper.style.transition = "transform 0.4s ease";
+    cardWrapper.style.transform = `translateX(-${cardIndex * cardWidth}px)`;
+
+    cardPrevBtn.disabled = cardIndex === 0;
+    cardNextBtn.disabled = cardIndex >= maxIndex;
+  }
+
+  cardNextBtn.addEventListener("click", () => {
+    if (cardIndex < maxIndex) {
+      cardIndex++;
+      moveCardSlider();
+    }
+  });
+
+  cardPrevBtn.addEventListener("click", () => {
+    if (cardIndex > 0) {
+      cardIndex--;
+      moveCardSlider();
+    }
+  });
+
+  moveCardSlider();
+
+});
+
 // ─────────────────────────────────────────
-// 3. PRODUCT CARD SLIDER
+// 3. USER LOGIN
 // ─────────────────────────────────────────
 
-const cardWrapper = document.getElementById("sliderTrack");
-const cards = cardWrapper.querySelectorAll(".deal-card");
+const API = "http://127.0.0.1:8000/auth"
 
-const cardPrevBtn = document.getElementById("homeItemsPrevBtn");
-const cardNextBtn = document.getElementById("homeItemsNextBtn");
+async function userLogin() {
 
-let cardIndex = 0;
+  let email = document.getElementById("email").value
+  let password = document.getElementById("password").value
 
-const cardWidth = cards[0].offsetWidth + 16;
-const cardsVisible = 4;
-const maxIndex = cards.length - cardsVisible;
+  let response = await fetch(API + "/login", {
 
-function moveCardSlider() {
-  cardWrapper.style.transition = "transform 0.4s ease";
-  cardWrapper.style.transform = `translateX(-${cardIndex * cardWidth}px)`;
+    method: "POST",
 
-  cardPrevBtn.disabled = cardIndex === 0;
-  cardNextBtn.disabled = cardIndex >= maxIndex;
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+
+    body: `email=${email}&password=${password}`
+
+  })
+
+  let data = await response.json()
+
+  if (data.token) {
+
+    localStorage.setItem("token", data.token)
+
+    document.getElementById("message").innerText = "Login successful"
+
+  } else {
+
+    document.getElementById("message").innerText = "Login failed"
+
+  }
 }
 
-cardNextBtn.addEventListener("click", () => {
-  if (cardIndex < maxIndex) {
-    cardIndex++;
-    moveCardSlider();
+// ─────────────────────────────────────────
+// 3. ADMIN LOGIN
+// ─────────────────────────────────────────
+
+async function adminLogin() {
+
+  let email = document.getElementById("admin_email").value
+  let password = document.getElementById("admin_password").value
+
+  let response = await fetch(API + "/login", {
+
+    method: "POST",
+
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+
+    body: `email=${email}&password=${password}`
+
+  })
+
+  let data = await response.json()
+
+  if (data.token) {
+
+    let payload = JSON.parse(atob(data.token.split('.')[1]))
+
+    if (payload.role === "admin") {
+
+      localStorage.setItem("token", data.token)
+
+      document.getElementById("admin_message").innerText = "Admin login successful"
+
+    } else {
+
+      document.getElementById("admin_message").innerText = "Not an admin account"
+
+    }
+
+  } else {
+
+    document.getElementById("admin_message").innerText = "Login failed"
+
   }
-});
 
-cardPrevBtn.addEventListener("click", () => {
-  if (cardIndex > 0) {
-    cardIndex--;
-    moveCardSlider();
-  }
-});
-
-moveCardSlider();
-
-});
-
+}
