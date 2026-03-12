@@ -189,11 +189,9 @@ async function adminLogin() {
   let response = await fetch(API + "/login", {
 
     method: "POST",
-
     headers: {
       "Content-Type": "application/x-www-form-urlencoded"
     },
-
     body: `email=${email}&password=${password}`
 
   })
