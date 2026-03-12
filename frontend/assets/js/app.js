@@ -182,42 +182,27 @@ async function userLogin() {
 // ─────────────────────────────────────────
 
 async function adminLogin() {
-
   let email = document.getElementById("admin_email").value
   let password = document.getElementById("admin_password").value
-
   let response = await fetch(API + "/login", {
-
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded"
     },
     body: `email=${email}&password=${password}`
-
   })
-
   let data = await response.json()
 
   if (data.token) {
-
     let payload = JSON.parse(atob(data.token.split('.')[1]))
-
     if (payload.role === "admin") {
-
       localStorage.setItem("token", data.token)
-
       document.getElementById("admin_message").innerText = "Admin login successful"
-
     } else {
-
       document.getElementById("admin_message").innerText = "Not an admin account"
-
     }
-
   } else {
-
     document.getElementById("admin_message").innerText = "Login failed"
-
   }
 
 }
