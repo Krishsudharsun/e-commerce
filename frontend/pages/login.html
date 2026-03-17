@@ -1756,6 +1756,146 @@
       background: rgba(240, 112, 112, .1);
     }
 
+    /* WISHLIST */
+    .wish-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      cursor: pointer;
+      font-size: 1rem;
+      display: grid;
+      place-items: center;
+      transition: all .2s;
+      flex-shrink: 0;
+    }
+
+    .wish-btn:hover {
+      border-color: #f07070;
+      transform: scale(1.1);
+    }
+
+    .wish-btn.wishlisted {
+      background: rgba(240, 112, 112, .15);
+      border-color: #f07070;
+    }
+
+    .wishlist-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 20px;
+    }
+
+    .wishlist-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: transform .2s, border-color .2s;
+    }
+
+    .wishlist-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(240, 112, 112, .3);
+    }
+
+    .wl-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .wl-emoji {
+      font-size: 2.2rem;
+    }
+
+    .wl-remove {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: color .2s;
+      padding: 2px;
+    }
+
+    .wl-remove:hover {
+      color: var(--error);
+    }
+
+    .wl-cat {
+      font-size: .7rem;
+      font-weight: 600;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--accent);
+      opacity: .8;
+    }
+
+    .wl-name {
+      font-size: .95rem;
+      font-weight: 600;
+    }
+
+    .wl-desc {
+      font-size: .78rem;
+      color: var(--muted);
+      line-height: 1.4;
+      flex: 1;
+    }
+
+    .wl-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 4px;
+    }
+
+    .wl-price {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .wl-add-btn {
+      padding: 6px 14px;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #0c0e14;
+      border: none;
+      font-size: .78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .wl-add-btn:hover {
+      background: var(--accent2);
+    }
+
+    .wishlist-empty {
+      text-align: center;
+      padding: 80px 0;
+      color: var(--muted);
+    }
+
+    .wishlist-count {
+      background: #f07070;
+      color: #fff;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: grid;
+      place-items: center;
+      font-size: .7rem;
+      font-weight: 700;
+    }
+
     /* TOAST */
     .toast-container {
       position: fixed;
@@ -1958,10 +2098,15 @@
       <div class="nav-brand">Shop<span>Arc</span></div>
       <div class="nav-tabs">
         <button class="nav-tab active" onclick="showSection('products')">🛒 Products</button>
+        <button class="nav-tab" onclick="showSection('wishlist')">❤️ Wishlist</button>
         <button class="nav-tab" onclick="showSection('orders')">📦 My Orders</button>
       </div>
       <div class="nav-right">
         <span class="nav-user" id="navUser"></span>
+        <button class="cart-btn" onclick="showSection('wishlist')"
+          style="background:rgba(240,112,112,.1);border-color:rgba(240,112,112,.3);">
+          ❤️ Wishlist <div class="wishlist-count" id="wishlistCount">0</div>
+        </button>
         <button class="cart-btn" onclick="showSection('cart')">
           🛍 Cart <div class="cart-count" id="cartCount">0</div>
         </button>
@@ -1972,8 +2117,15 @@
     <!-- Products -->
     <div class="section active" id="productsSection">
       <div class="section-title">Our Products</div>
-      <div class="section-sub">Tap any item to add it to your cart.</div>
+      <div class="section-sub">Add items to your cart 🛍 or save them to your wishlist ❤️</div>
       <div class="product-grid" id="productGrid"></div>
+    </div>
+
+    <!-- Wishlist -->
+    <div class="section" id="wishlistSection">
+      <div class="section-title">❤️ My Wishlist</div>
+      <div class="section-sub">Your saved items — add them to cart whenever you're ready.</div>
+      <div id="wishlistContent"></div>
     </div>
 
     <!-- Cart -->
@@ -2032,7 +2184,7 @@
   <script>
     // ── Config ─────────────────────────────────────────────────
     const API = 'http://localhost:5000/api';
-    let state = { user: null, token: null, cart: [], products: [], orders: [] };
+    let state = { user: null, token: null, cart: [], products: [], orders: [], wishlist: [] };
 
     // ── API helper ──────────────────────────────────────────────
     async function api(path, opts = {}) {
@@ -2082,8 +2234,6 @@
     async function handleLogin() {
       const email = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value;
-      const emailFormat = email.toLowerCase();
-
       if (!email || !password) return showAlert('loginAlert', 'Please fill in all fields.');
       setLoading('loginBtn', true);
       try {
@@ -2095,26 +2245,25 @@
       finally { setLoading('loginBtn', false); }
     }
 
-      async function handleRegister() {
-        const name = document.getElementById('regName').value.trim();
-        const email = document.getElementById('regEmail').value.trim();
-        const password = document.getElementById('regPassword').value;
-        if (!name || !email || !password) return showAlert('registerAlert', 'Please fill in all fields.');
-        if (password.length < 6) return showAlert('registerAlert', 'Password must be at least 6 characters.');
-        setLoading('registerBtn', true);
-        try {
-          const { ok, data } = await api('/auth/register', { method: 'POST', body: JSON.stringify({ name, email, password }) });
-          if (!ok) { showAlert('registerAlert', data.error || 'Registration failed.'); return; }
-          showAlert('registerAlert', 'Account created! Redirecting...', 'success');
-          setTimeout(async () => { await startSession(data.token, data.user); }, 800);
-        } catch { showAlert('registerAlert', 'Cannot reach server. Is the backend running?'); }
-        finally { setLoading('registerBtn', false); }
-      }
-  
+    async function handleRegister() {
+      const name = document.getElementById('regName').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const password = document.getElementById('regPassword').value;
+      if (!name || !email || !password) return showAlert('registerAlert', 'Please fill in all fields.');
+      if (password.length < 6) return showAlert('registerAlert', 'Password must be at least 6 characters.');
+      setLoading('registerBtn', true);
+      try {
+        const { ok, data } = await api('/auth/register', { method: 'POST', body: JSON.stringify({ name, email, password }) });
+        if (!ok) { showAlert('registerAlert', data.error || 'Registration failed.'); return; }
+        showAlert('registerAlert', 'Account created! Redirecting...', 'success');
+        setTimeout(async () => { await startSession(data.token, data.user); }, 800);
+      } catch { showAlert('registerAlert', 'Cannot reach server. Is the backend running?'); }
+      finally { setLoading('registerBtn', false); }
+    }
 
     function handleLogout() {
       localStorage.removeItem('token'); localStorage.removeItem('user');
-      state = { user: null, token: null, cart: [], products: [], orders: [] };
+      state = { user: null, token: null, cart: [], products: [], orders: [], wishlist: [] };
       document.getElementById('appPage').classList.remove('active');
       document.getElementById('authPage').classList.add('active');
       switchTab('login');
@@ -2127,7 +2276,7 @@
       document.getElementById('authPage').classList.remove('active');
       document.getElementById('appPage').classList.add('active');
       document.getElementById('navUser').textContent = `Hi, ${user.name.split(' ')[0]} 👋`;
-      await Promise.all([loadProducts(), loadCart()]);
+      await Promise.all([loadProducts(), loadCart(), loadWishlist()]);
       showSection('products');
     }
 
@@ -2136,9 +2285,10 @@
       document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
       document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
       document.getElementById(name + 'Section').classList.add('active');
-      const tabIdx = { products: 0, orders: 1 }[name];
+      const tabIdx = { products: 0, wishlist: 1, orders: 2 }[name];
       if (tabIdx !== undefined) document.querySelectorAll('.nav-tab')[tabIdx].classList.add('active');
       if (name === 'cart') renderCart();
+      if (name === 'wishlist') renderWishlist();
       if (name === 'orders') loadOrders();
     }
 
@@ -2152,7 +2302,10 @@
 
     function renderProducts() {
       const grid = document.getElementById('productGrid');
-      grid.innerHTML = state.products.map(p => `
+      const wlIds = state.wishlist.map(i => i.product_id);
+      grid.innerHTML = state.products.map(p => {
+        const isWishlisted = wlIds.includes(p.id);
+        return `
     <div class="product-card">
       <div class="product-emoji">${p.image || '📦'}</div>
       <div class="product-cat">${p.category || 'General'}</div>
@@ -2160,12 +2313,93 @@
       <div class="product-desc">${p.description || ''}</div>
       <div class="product-footer">
         <div class="product-price">$${p.price.toFixed(2)}</div>
-        <button class="add-btn" id="addBtn-${p.id}" onclick="addToCart('${p.id}')">+ Add</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="wish-btn ${isWishlisted ? 'wishlisted' : ''}" id="wishBtn-${p.id}"
+            onclick="toggleWishlist('${p.id}')" title="${isWishlisted ? 'Remove from wishlist' : 'Save to wishlist'}">
+            ${isWishlisted ? '❤️' : '🤍'}
+          </button>
+          <button class="add-btn" id="addBtn-${p.id}" onclick="addToCart('${p.id}')">+ Cart</button>
+        </div>
       </div>
-    </div>`).join('');
+    </div>`}).join('');
     }
 
-    // ── Cart ─────────────────────────────────────────────────────
+    // ── Wishlist ──────────────────────────────────────────────────
+    async function loadWishlist() {
+      try {
+        const { ok, data } = await api('/wishlist/');
+        if (ok) { state.wishlist = data.items; updateWishlistCount(); }
+      } catch { }
+    }
+
+    function updateWishlistCount() {
+      document.getElementById('wishlistCount').textContent = state.wishlist.length;
+    }
+
+    async function toggleWishlist(productId) {
+      const btn = document.getElementById('wishBtn-' + productId);
+      if (btn) btn.disabled = true;
+      try {
+        const { ok, data } = await api('/wishlist/', { method: 'POST', body: JSON.stringify({ product_id: productId }) });
+        if (ok) {
+          state.wishlist = data.items;
+          updateWishlistCount();
+          const added = data.action === 'added';
+          toast(added ? '❤️ Added to wishlist!' : '🤍 Removed from wishlist', added ? 'success' : 'error');
+          // update heart button instantly
+          if (btn) {
+            btn.textContent = added ? '❤️' : '🤍';
+            btn.classList.toggle('wishlisted', added);
+          }
+        }
+      } catch { toast('Failed to update wishlist.', 'error'); }
+      finally { if (btn) btn.disabled = false; }
+    }
+
+    function renderWishlist() {
+      const el = document.getElementById('wishlistContent');
+      if (!state.wishlist.length) {
+        el.innerHTML = `<div class="wishlist-empty"><div style="font-size:3.5rem;margin-bottom:16px">🤍</div><p>Your wishlist is empty.</p><p style="margin-top:8px;font-size:.85rem">Tap the ❤️ on any product to save it here.</p></div>`;
+        return;
+      }
+      el.innerHTML = `<div class="wishlist-grid">${state.wishlist.map(item => `
+    <div class="wishlist-card">
+      <div class="wl-top">
+        <div class="wl-emoji">${item.image || '📦'}</div>
+        <button class="wl-remove" onclick="removeWishlistItem('${item.product_id}')" title="Remove">✕</button>
+      </div>
+      <div class="wl-cat">${item.category || 'General'}</div>
+      <div class="wl-name">${item.name}</div>
+      <div class="wl-desc">${item.description || ''}</div>
+      <div class="wl-footer">
+        <div class="wl-price">$${item.price.toFixed(2)}</div>
+        <button class="wl-add-btn" onclick="addToCartFromWishlist('${item.product_id}')">+ Add to Cart</button>
+      </div>
+    </div>`).join('')}</div>`;
+    }
+
+    async function removeWishlistItem(productId) {
+      const { ok, data } = await api(`/wishlist/${productId}`, { method: 'DELETE' });
+      if (ok) {
+        state.wishlist = data.items; updateWishlistCount();
+        renderWishlist();
+        // update heart on products page
+        const btn = document.getElementById('wishBtn-' + productId);
+        if (btn) { btn.textContent = '🤍'; btn.classList.remove('wishlisted'); }
+        toast('Removed from wishlist.');
+      }
+    }
+
+    async function addToCartFromWishlist(productId) {
+      const { ok, data } = await api('/cart/', { method: 'POST', body: JSON.stringify({ product_id: productId, quantity: 1 }) });
+      if (ok) {
+        state.cart = data.items; updateCartCount();
+        const item = state.wishlist.find(i => i.product_id === productId);
+        toast(`${item?.name || 'Item'} added to cart! 🛍`);
+      } else { toast(data.error || 'Failed to add to cart.', 'error'); }
+    }
+
+    // ── Cart ──────────────────────────────────────────────────────
     async function loadCart() {
       try {
         const { ok, data } = await api('/cart/');
