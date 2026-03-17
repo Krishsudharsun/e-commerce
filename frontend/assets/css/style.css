@@ -71,6 +71,32 @@ body {
   cursor: pointer;
 }
 
+.login-page img {
+  width: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-page a {
+  color: #333;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+
+.login-page a:hover {
+  color: #e53935;
+}
+
+.login-page {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* navbar end */
 
 /*main menu */
