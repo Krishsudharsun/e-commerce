@@ -147,6 +147,9 @@ const API = "http://127.0.0.1:8000/auth"
 
 async function userLogin() {
 
+  var emailInput = document.getElementById("email")
+  var passwordInput = document.getElementById("password")
+
   let email = document.getElementById("email").value
   let password = document.getElementById("password").value
 
