@@ -2082,6 +2082,8 @@
     async function handleLogin() {
       const email = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value;
+      const emailFormat = email.toLowerCase();
+
       if (!email || !password) return showAlert('loginAlert', 'Please fill in all fields.');
       setLoading('loginBtn', true);
       try {
@@ -2093,21 +2095,22 @@
       finally { setLoading('loginBtn', false); }
     }
 
-    async function handleRegister() {
-      const name = document.getElementById('regName').value.trim();
-      const email = document.getElementById('regEmail').value.trim();
-      const password = document.getElementById('regPassword').value;
-      if (!name || !email || !password) return showAlert('registerAlert', 'Please fill in all fields.');
-      if (password.length < 6) return showAlert('registerAlert', 'Password must be at least 6 characters.');
-      setLoading('registerBtn', true);
-      try {
-        const { ok, data } = await api('/auth/register', { method: 'POST', body: JSON.stringify({ name, email, password }) });
-        if (!ok) { showAlert('registerAlert', data.error || 'Registration failed.'); return; }
-        showAlert('registerAlert', 'Account created! Redirecting...', 'success');
-        setTimeout(async () => { await startSession(data.token, data.user); }, 800);
-      } catch { showAlert('registerAlert', 'Cannot reach server. Is the backend running?'); }
-      finally { setLoading('registerBtn', false); }
-    }
+      async function handleRegister() {
+        const name = document.getElementById('regName').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const password = document.getElementById('regPassword').value;
+        if (!name || !email || !password) return showAlert('registerAlert', 'Please fill in all fields.');
+        if (password.length < 6) return showAlert('registerAlert', 'Password must be at least 6 characters.');
+        setLoading('registerBtn', true);
+        try {
+          const { ok, data } = await api('/auth/register', { method: 'POST', body: JSON.stringify({ name, email, password }) });
+          if (!ok) { showAlert('registerAlert', data.error || 'Registration failed.'); return; }
+          showAlert('registerAlert', 'Account created! Redirecting...', 'success');
+          setTimeout(async () => { await startSession(data.token, data.user); }, 800);
+        } catch { showAlert('registerAlert', 'Cannot reach server. Is the backend running?'); }
+        finally { setLoading('registerBtn', false); }
+      }
+  
 
     function handleLogout() {
       localStorage.removeItem('token'); localStorage.removeItem('user');
