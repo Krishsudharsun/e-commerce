@@ -11,8 +11,7 @@ from routes.auth import auth_bp
 from routes.products import products_bp
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000", "http://127.0.0.1:3000"])
-
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=False)
 # Register blueprints
 app.register_blueprint(auth_bp)
 app.register_blueprint(products_bp)

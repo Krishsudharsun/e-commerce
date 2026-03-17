@@ -23,6 +23,14 @@ body {
   position: relative;
 }
 
+.logo-bg img {
+  width: 60px;
+  height: auto;
+  object-fit: contain;
+  margin: 0%;
+  padding: 0%;
+}
+
 .search {
   display: flex;
   align-items: center;
