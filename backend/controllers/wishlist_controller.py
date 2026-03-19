@@ -19,15 +19,13 @@ def toggle_wishlist(user_id: str, data: dict) -> tuple[dict, int]:
         return {"error": "product_id is required."}, 400
 
     db = get_db()
-<<<<<<< HEAD
-=======
 
     # validate product exists
->>>>>>> 35e5bf13951267a5c7c5bb711e069538ab6ea9d9
     try:
         product = db.products.find_one({"_id": ObjectId(product_id)})
     except Exception:
         return {"error": "Invalid product ID."}, 400
+
     if not product:
         return {"error": "Product not found."}, 404
 
@@ -36,17 +34,11 @@ def toggle_wishlist(user_id: str, data: dict) -> tuple[dict, int]:
     ids = [i["product_id"] for i in items]
 
     if product_id in ids:
-<<<<<<< HEAD
-        items = [i for i in items if i["product_id"] != product_id]
-        action = "removed"
-    else:
-=======
         # remove from wishlist
         items = [i for i in items if i["product_id"] != product_id]
         action = "removed"
     else:
         # add to wishlist
->>>>>>> 35e5bf13951267a5c7c5bb711e069538ab6ea9d9
         items.append({
             "product_id": product_id,
             "name": product["name"],
@@ -62,17 +54,13 @@ def toggle_wishlist(user_id: str, data: dict) -> tuple[dict, int]:
         {"$set": {"items": items, "updated_at": datetime.utcnow()}},
         upsert=True,
     )
-<<<<<<< HEAD
+
     return {
         "message": f"Product {action} {'to' if action == 'added' else 'from'} wishlist.",
         "action": action,
         "items": items,
         "count": len(items)
     }, 200
-=======
-    return {"message": f"Product {action} {'to' if action == 'added' else 'from'} wishlist.",
-            "action": action, "items": items, "count": len(items)}, 200
->>>>>>> 35e5bf13951267a5c7c5bb711e069538ab6ea9d9
 
 
 def remove_from_wishlist(user_id: str, product_id: str) -> tuple[dict, int]:
