@@ -36,7 +36,7 @@
       </div>
       <div class="login-page">
         <img src="assets/img/user3dddc6.png" alt="Account">
-        <a href="/frontend/pages/login.html">Login / Signup</a>
+        <a href="./pages/login.html" onclick="">Login / Signup</a>
       </div>
     </div>
   </nav>
@@ -580,9 +580,10 @@
             </div>
           </div>
 
-          <div class="deal-card">
+          <!-- Card 5 -->
+          <div class="deal-card" data-name="Fresh Onion" data-price="10">
             <span class="discount-badge">79.17% Off</span>
-            <button class="wishlist-btn">&#9825;</button>
+            <button class="wishlist-btn" onclick="toggleWishlistByName(this,'Fresh Onion',10,'🧅')">&#9825;</button>
             <div class="card-img-wrap">
               <img src="assets/img/items/onion.jpg" alt="Fresh Onion">
             </div>
@@ -598,13 +599,14 @@
               <select class="weight-select">
                 <option>Weight : 1 kg</option>
               </select>
-              <button class="add-btn">+ Add</button>
+              <button class="add-btn" onclick="addToCartByName(this,'Fresh Onion',10,'🧅')">+ Add</button>
             </div>
           </div>
 
-          <div class="deal-card">
+          <!-- Card 6 -->
+          <div class="deal-card" data-name="Fresh Carrot" data-price="12">
             <span class="discount-badge">60% Off</span>
-            <button class="wishlist-btn">&#9825;</button>
+            <button class="wishlist-btn" onclick="toggleWishlistByName(this,'Fresh Carrot',12,'🥕')">&#9825;</button>
             <div class="card-img-wrap">
               <img src="assets/img/items/carrots.jpg" alt="Fresh Carrot">
             </div>
@@ -620,13 +622,14 @@
               <select class="weight-select">
                 <option>Weight : 1 kg</option>
               </select>
-              <button class="add-btn">+ Add</button>
+              <button class="add-btn" onclick="addToCartByName(this,'Fresh Carrot',12,'🥕')">+ Add</button>
             </div>
           </div>
 
-          <div class="deal-card">
+          <!-- Card 7 -->
+          <div class="deal-card" data-name="Fresh Mint Leaves" data-price="1">
             <span class="discount-badge">90% Off</span>
-            <button class="wishlist-btn">&#9825;</button>
+            <button class="wishlist-btn" onclick="toggleWishlistByName(this,'Fresh Mint Leaves',1,'🌿')">&#9825;</button>
             <div class="card-img-wrap">
               <img
                 src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Mint-leaves-2007.jpg/320px-Mint-leaves-2007.jpg"
@@ -644,7 +647,7 @@
               <select class="weight-select">
                 <option>BUNCH : 1 BUNCH</option>
               </select>
-              <button class="add-btn">+ Add</button>
+              <button class="add-btn" onclick="addToCartByName(this,'Fresh Mint Leaves',1,'🌿')">+ Add</button>
             </div>
           </div>
 
@@ -733,7 +736,7 @@
             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
             <polyline points="22,6 12,13 2,6" />
           </svg>
-          <a href="mailto:info@mysite.com">info@mysite.com</a>
+          <a href="/cdn-cgi/l/email-protection#fe97909891be93878d978a9bd09d9193"><span class="__cf_email__" data-cfemail="30595e565f705d49435944551e535f5d">[email&#160;protected]</span></a>
         </div>
 
         <div class="payment-label">Payment Gateways</div>
@@ -751,10 +754,10 @@
     <hr class="footer-divider">
 
     <div class="footer-bottom">
-      &copy; 2025 Mysite_upfinity.com. All Rights Reserved.
+      <p>© 2025 FreshMart. All rights reserved.</p>
     </div>
+
   </footer>
 
 </body>
-
 </html>
