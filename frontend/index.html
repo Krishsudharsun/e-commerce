@@ -11,6 +11,36 @@
     rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
   <title>Home | Store</title>
+
+  <!-- Auth state applied BEFORE page renders to prevent flash -->
+  <style>
+    #loginLink  { display: inline !important; }
+    #userSection{ display: none   !important; }
+    body.is-logged-in #loginLink  { display: none   !important; }
+    body.is-logged-in #userSection{ display: block  !important; }
+  </style>
+  <script>
+    /* Runs synchronously in <head> — before any HTML is painted */
+    (function() {
+      try {
+        var token = localStorage.getItem('token');
+        var user  = JSON.parse(localStorage.getItem('user') || 'null');
+        if (token && user) {
+          document.documentElement.classList.add('is-logged-in-early');
+          /* We'll apply the class to body once it exists */
+          document.addEventListener('DOMContentLoaded', function() {
+            document.body.classList.add('is-logged-in');
+            var fn = document.getElementById('userFirstName');
+            var dd = document.getElementById('ddName');
+            var de = document.getElementById('ddEmail');
+            if (fn) fn.textContent = user.name.split(' ')[0];
+            if (dd) dd.textContent = user.name;
+            if (de) de.textContent = user.email;
+          });
+        }
+      } catch(e) {}
+    })();
+  </script>
 </head>
 
 <body>
@@ -28,18 +58,85 @@
     </div>
 
     <div class="carts">
-      <div class="crtimg">
+      <!-- Wishlist icon with badge -->
+      <div class="crtimg" onclick="openWishlistDrawer()" style="cursor:pointer;position:relative;">
         <img src="assets/img/heart.png" alt="Wishlist">
+        <span id="wishlistBadge" style="display:none;position:absolute;top:-6px;right:-6px;background:#e02020;color:#fff;border-radius:50%;width:18px;height:18px;font-size:11px;font-weight:700;line-height:18px;text-align:center;">0</span>
       </div>
-      <div class="crtimg">
+      <!-- Cart icon with badge -->
+      <div class="crtimg" onclick="openCartDrawer()" style="cursor:pointer;position:relative;">
         <img src="assets/img/cart.png" alt="Cart">
+        <span id="cartBadge" style="display:none;position:absolute;top:-6px;right:-6px;background:#e02020;color:#fff;border-radius:50%;width:18px;height:18px;font-size:11px;font-weight:700;line-height:18px;text-align:center;">0</span>
       </div>
-      <div class="login-page">
+      <!-- Account -->
+      <div class="login-page" style="position:relative;">
         <img src="assets/img/user3dddc6.png" alt="Account">
-        <a href="./pages/login.html" onclick="">Login / Signup</a>
+        <!-- Shown when NOT logged in -->
+        <a href="./pages/login.html" id="loginLink">Login / Signup</a>
+        <!-- Shown when logged in -->
+        <div id="userSection" style="position:relative;">
+          <span id="userGreeting" onclick="toggleDropdown(event)"
+            style="cursor:pointer;font-size:.85rem;font-weight:600;color:#333;white-space:nowrap;">
+            Hi, <span id="userFirstName"></span> ▾
+          </span>
+        </div>
       </div>
     </div>
   </nav>
+
+  <!-- ACCOUNT DROPDOWN — outside nav to avoid overflow:hidden clipping -->
+  <div id="accountDropdown" style="
+    display:none;position:fixed;top:64px;right:20px;
+    background:#fff;border:1px solid #e0e0e0;border-radius:12px;
+    box-shadow:0 8px 32px rgba(0,0,0,.18);min-width:260px;
+    z-index:99999;font-family:'Inter',sans-serif;overflow:hidden;">
+    <div style="padding:14px 16px;background:#fafafa;border-bottom:1px solid #eee;">
+      <div style="font-size:.7rem;color:#aaa;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Logged in as</div>
+      <div id="ddName" style="font-weight:700;font-size:.9rem;color:#1a1a1a;"></div>
+      <div id="ddEmail" style="font-size:.78rem;color:#777;margin-top:1px;"></div>
+    </div>
+    <div style="padding:6px 0;">
+      <div onclick="openAccountModal()" style="padding:11px 16px;cursor:pointer;font-size:.875rem;color:#333;display:flex;align-items:center;gap:10px;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">👤 &nbsp;My Account</div>
+      <div onclick="openCartDrawer();closeDropdown()" style="padding:11px 16px;cursor:pointer;font-size:.875rem;color:#333;display:flex;align-items:center;gap:10px;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">🛒 &nbsp;My Cart</div>
+      <div onclick="openWishlistDrawer();closeDropdown()" style="padding:11px 16px;cursor:pointer;font-size:.875rem;color:#333;display:flex;align-items:center;gap:10px;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">❤️ &nbsp;My Wishlist</div>
+      <div onclick="openOrdersModal()" style="padding:11px 16px;cursor:pointer;font-size:.875rem;color:#333;display:flex;align-items:center;gap:10px;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">📦 &nbsp;My Orders</div>
+      <div style="height:1px;background:#eee;margin:4px 0;"></div>
+      <div onclick="handleLogout()" style="padding:11px 16px;cursor:pointer;font-size:.875rem;color:#e02020;display:flex;align-items:center;gap:10px;font-weight:600;" onmouseover="this.style.background='#fff0f0'" onmouseout="this.style.background=''">🚪 &nbsp;Sign Out</div>
+    </div>
+  </div>
+
+  <!-- ACCOUNT MODAL -->
+  <div id="accountOverlay" onclick="closeAccountModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;align-items:center;justify-content:center;">
+    <div onclick="event.stopPropagation()" style="background:#fff;border-radius:16px;width:400px;overflow:hidden;font-family:'Inter',sans-serif;box-shadow:0 16px 48px rgba(0,0,0,.2);">
+      <div style="background:linear-gradient(135deg,#e02020,#ff6b6b);padding:24px;color:#fff;position:relative;">
+        <button onclick="closeAccountModal()" style="position:absolute;top:12px;right:14px;background:rgba(255,255,255,.2);border:none;color:#fff;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:.9rem;">✕</button>
+        <div id="accAvatar" style="width:56px;height:56px;background:rgba(255,255,255,.25);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin-bottom:10px;"></div>
+        <div id="accName" style="font-size:1.1rem;font-weight:700;"></div>
+        <div id="accEmail" style="font-size:.82rem;opacity:.85;margin-top:2px;"></div>
+      </div>
+      <div style="padding:18px 20px;">
+        <div style="font-size:.7rem;font-weight:700;color:#aaa;letter-spacing:.07em;text-transform:uppercase;margin-bottom:12px;">Account Details</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;justify-content:space-between;padding:10px 12px;background:#f8f8f8;border-radius:8px;"><span style="font-size:.83rem;color:#666;">Full Name</span><span id="accDetailName" style="font-size:.83rem;font-weight:600;"></span></div>
+          <div style="display:flex;justify-content:space-between;padding:10px 12px;background:#f8f8f8;border-radius:8px;"><span style="font-size:.83rem;color:#666;">Email</span><span id="accDetailEmail" style="font-size:.83rem;font-weight:600;"></span></div>
+          <div style="display:flex;justify-content:space-between;padding:10px 12px;background:#f8f8f8;border-radius:8px;"><span style="font-size:.83rem;color:#666;">Status</span><span style="font-size:.83rem;font-weight:600;color:#1a8a5a;">✓ Active</span></div>
+          <div style="display:flex;justify-content:space-between;padding:10px 12px;background:#f8f8f8;border-radius:8px;"><span style="font-size:.83rem;color:#666;">Member Since</span><span id="accDetailJoined" style="font-size:.83rem;font-weight:600;"></span></div>
+        </div>
+        <button onclick="handleLogout()" style="width:100%;margin-top:16px;padding:11px;border:none;border-radius:8px;background:#e02020;color:#fff;font-family:'Inter',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;">🚪 Sign Out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ORDERS MODAL -->
+  <div id="ordersOverlay" onclick="closeOrdersModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;align-items:center;justify-content:center;">
+    <div onclick="event.stopPropagation()" style="background:#fff;border-radius:16px;width:540px;max-height:80vh;overflow:hidden;font-family:'Inter',sans-serif;box-shadow:0 16px 48px rgba(0,0,0,.2);display:flex;flex-direction:column;">
+      <div style="padding:18px 22px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:1rem;font-weight:700;">📦 My Orders</span>
+        <button onclick="closeOrdersModal()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:#999;">✕</button>
+      </div>
+      <div id="ordersContent" style="overflow-y:auto;padding:14px 22px;flex:1;"></div>
+    </div>
+  </div>
 
   <div class="menuWrap">
 
@@ -580,10 +677,9 @@
             </div>
           </div>
 
-          <!-- Card 5 -->
-          <div class="deal-card" data-name="Fresh Onion" data-price="10">
+          <div class="deal-card">
             <span class="discount-badge">79.17% Off</span>
-            <button class="wishlist-btn" onclick="toggleWishlistByName(this,'Fresh Onion',10,'🧅')">&#9825;</button>
+            <button class="wishlist-btn">&#9825;</button>
             <div class="card-img-wrap">
               <img src="assets/img/items/onion.jpg" alt="Fresh Onion">
             </div>
@@ -599,14 +695,13 @@
               <select class="weight-select">
                 <option>Weight : 1 kg</option>
               </select>
-              <button class="add-btn" onclick="addToCartByName(this,'Fresh Onion',10,'🧅')">+ Add</button>
+              <button class="add-btn">+ Add</button>
             </div>
           </div>
 
-          <!-- Card 6 -->
-          <div class="deal-card" data-name="Fresh Carrot" data-price="12">
+          <div class="deal-card">
             <span class="discount-badge">60% Off</span>
-            <button class="wishlist-btn" onclick="toggleWishlistByName(this,'Fresh Carrot',12,'🥕')">&#9825;</button>
+            <button class="wishlist-btn">&#9825;</button>
             <div class="card-img-wrap">
               <img src="assets/img/items/carrots.jpg" alt="Fresh Carrot">
             </div>
@@ -622,14 +717,13 @@
               <select class="weight-select">
                 <option>Weight : 1 kg</option>
               </select>
-              <button class="add-btn" onclick="addToCartByName(this,'Fresh Carrot',12,'🥕')">+ Add</button>
+              <button class="add-btn">+ Add</button>
             </div>
           </div>
 
-          <!-- Card 7 -->
-          <div class="deal-card" data-name="Fresh Mint Leaves" data-price="1">
+          <div class="deal-card">
             <span class="discount-badge">90% Off</span>
-            <button class="wishlist-btn" onclick="toggleWishlistByName(this,'Fresh Mint Leaves',1,'🌿')">&#9825;</button>
+            <button class="wishlist-btn">&#9825;</button>
             <div class="card-img-wrap">
               <img
                 src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Mint-leaves-2007.jpg/320px-Mint-leaves-2007.jpg"
@@ -647,7 +741,7 @@
               <select class="weight-select">
                 <option>BUNCH : 1 BUNCH</option>
               </select>
-              <button class="add-btn" onclick="addToCartByName(this,'Fresh Mint Leaves',1,'🌿')">+ Add</button>
+              <button class="add-btn">+ Add</button>
             </div>
           </div>
 
@@ -658,6 +752,292 @@
   </div>
 
   <script src="assets/js/app.js"></script>
+
+  <!-- CART DRAWER -->
+  <div id="cartOverlay" onclick="closeCartDrawer()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;"></div>
+  <div id="cartDrawer" style="display:none;position:fixed;top:0;right:0;width:400px;height:100vh;background:#fff;z-index:9001;box-shadow:-4px 0 24px rgba(0,0,0,.15);flex-direction:column;font-family:'Inter',sans-serif;">
+    <div style="padding:18px 22px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:1rem;font-weight:700;">🛍 Your Cart <span id="drawerCartCount" style="color:#e02020;font-size:.85rem;"></span></span><button onclick="closeCartDrawer()" style="border:none;background:none;font-size:1.3rem;cursor:pointer;color:#999;">✕</button></div>
+    <div id="drawerCartItems" style="flex:1;overflow-y:auto;padding:14px 22px;"></div>
+    <div id="drawerCartFooter" style="padding:14px 22px;border-top:1px solid #eee;"></div>
+  </div>
+
+  <!-- WISHLIST DRAWER -->
+  <div id="wishlistOverlay" onclick="closeWishlistDrawer()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;"></div>
+  <div id="wishlistDrawer" style="display:none;position:fixed;top:0;right:0;width:400px;height:100vh;background:#fff;z-index:9001;box-shadow:-4px 0 24px rgba(0,0,0,.15);flex-direction:column;font-family:'Inter',sans-serif;">
+    <div style="padding:18px 22px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:1rem;font-weight:700;">❤️ Wishlist <span id="drawerWishlistCount" style="color:#e02020;font-size:.85rem;"></span></span><button onclick="closeWishlistDrawer()" style="border:none;background:none;font-size:1.3rem;cursor:pointer;color:#999;">✕</button></div>
+    <div id="drawerWishlistItems" style="flex:1;overflow-y:auto;padding:14px 22px;"></div>
+  </div>
+
+  <!-- CHECKOUT MODAL -->
+  <div id="checkoutOverlay" onclick="closeCheckout()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9500;align-items:center;justify-content:center;">
+    <div onclick="event.stopPropagation()" style="background:#fff;border-radius:16px;padding:28px;width:460px;max-height:90vh;overflow-y:auto;font-family:'Inter',sans-serif;">
+      <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:18px;">📦 Shipping Details</h3>
+      <div style="margin-bottom:10px;"><label style="font-size:.78rem;font-weight:600;color:#555;display:block;margin-bottom:4px;">Full Name</label><input id="addrName" type="text" placeholder="Jane Doe" style="width:100%;padding:9px 11px;border:1px solid #ddd;border-radius:7px;font-family:'Inter',sans-serif;font-size:.88rem;outline:none;"/></div>
+      <div style="margin-bottom:10px;"><label style="font-size:.78rem;font-weight:600;color:#555;display:block;margin-bottom:4px;">Street Address</label><input id="addrStreet" type="text" placeholder="123 Main St" style="width:100%;padding:9px 11px;border:1px solid #ddd;border-radius:7px;font-family:'Inter',sans-serif;font-size:.88rem;outline:none;"/></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div><label style="font-size:.78rem;font-weight:600;color:#555;display:block;margin-bottom:4px;">City</label><input id="addrCity" type="text" placeholder="Chennai" style="width:100%;padding:9px 11px;border:1px solid #ddd;border-radius:7px;font-family:'Inter',sans-serif;font-size:.88rem;outline:none;"/></div>
+        <div><label style="font-size:.78rem;font-weight:600;color:#555;display:block;margin-bottom:4px;">ZIP</label><input id="addrZip" type="text" placeholder="600001" style="width:100%;padding:9px 11px;border:1px solid #ddd;border-radius:7px;font-family:'Inter',sans-serif;font-size:.88rem;outline:none;"/></div>
+      </div>
+      <div style="margin-bottom:14px;"><label style="font-size:.78rem;font-weight:600;color:#555;display:block;margin-bottom:4px;">Country</label><input id="addrCountry" type="text" placeholder="India" style="width:100%;padding:9px 11px;border:1px solid #ddd;border-radius:7px;font-family:'Inter',sans-serif;font-size:.88rem;outline:none;"/></div>
+      <div id="orderSummaryBox" style="background:#f8f8f8;border-radius:9px;padding:11px 14px;margin-bottom:14px;font-size:.85rem;"></div>
+      <div id="checkoutAlert" style="display:none;padding:9px 12px;border-radius:7px;font-size:.83rem;margin-bottom:10px;font-weight:500;background:#fff0f0;color:#c01818;border:1px solid #fbc4c4;"></div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="closeCheckout()" style="flex:1;padding:11px;border:1px solid #ddd;border-radius:7px;background:#fff;cursor:pointer;font-family:'Inter',sans-serif;font-size:.88rem;">Cancel</button>
+        <button id="placeOrderBtn" onclick="placeOrder()" style="flex:2;padding:11px;border:none;border-radius:7px;background:#e02020;color:#fff;font-family:'Inter',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;">Place Order 🎉</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toastContainer" style="position:fixed;bottom:22px;right:22px;z-index:99999;display:flex;flex-direction:column;gap:7px;"></div>
+
+  <script>
+  var API = 'http://localhost:5000/api';
+  var state = { token: null, user: null, cart: [], wishlist: [] };
+
+  // ── INIT: check login state on page load ─────────────────
+  (function init() {
+    var token = localStorage.getItem('token');
+    var userStr = localStorage.getItem('user');
+    if (!token || !userStr) return;
+
+    var user;
+    try { user = JSON.parse(userStr); } catch(e) { return; }
+
+    state.token = token;
+    state.user  = user;
+
+    // CSS class handles show/hide — apply it now in case DOMContentLoaded already fired
+    document.body.classList.add('is-logged-in');
+    var fn = document.getElementById('userFirstName');
+    var dd = document.getElementById('ddName');
+    var de = document.getElementById('ddEmail');
+    if (fn) fn.textContent = user.name.split(' ')[0];
+    if (dd) dd.textContent = user.name;
+    if (de) de.textContent = user.email;
+
+    loadCart();
+    loadWishlist();
+  })();
+
+  function toggleDropdown(e) {
+    if (e) e.stopPropagation();
+    var dd = document.getElementById('accountDropdown');
+    dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
+  }
+  function closeDropdown() {
+    document.getElementById('accountDropdown').style.display = 'none';
+  }
+
+  // Close dropdown when clicking anywhere outside it
+  document.addEventListener('click', function(e) {
+    var dd = document.getElementById('accountDropdown');
+    if (dd && dd.style.display === 'block' && !dd.contains(e.target)) {
+      dd.style.display = 'none';
+    }
+  });
+
+  // ── ACCOUNT MODAL ─────────────────────────────────────────
+  function openAccountModal() {
+    closeDropdown();
+    var u = state.user;
+    if (!u) return;
+    document.getElementById('accAvatar').textContent    = u.name.charAt(0).toUpperCase();
+    document.getElementById('accName').textContent      = u.name;
+    document.getElementById('accEmail').textContent     = u.email;
+    document.getElementById('accDetailName').textContent  = u.name;
+    document.getElementById('accDetailEmail').textContent = u.email;
+    var joined = u.created_at
+      ? new Date(u.created_at).toLocaleDateString('en-IN', {year:'numeric',month:'long',day:'numeric'})
+      : 'N/A';
+    document.getElementById('accDetailJoined').textContent = joined;
+    document.getElementById('accountOverlay').style.display = 'flex';
+  }
+  function closeAccountModal() {
+    document.getElementById('accountOverlay').style.display = 'none';
+  }
+
+  // ── ORDERS MODAL ──────────────────────────────────────────
+  async function openOrdersModal() {
+    closeDropdown();
+    document.getElementById('ordersOverlay').style.display = 'flex';
+    document.getElementById('ordersContent').innerHTML = '<div style="text-align:center;padding:28px;color:#aaa;">Loading...</div>';
+    var r = await apiCall('/orders/');
+    if (!r.ok) { document.getElementById('ordersContent').innerHTML = '<div style="text-align:center;padding:28px;color:#c01818;">Failed to load orders.</div>'; return; }
+    if (!r.data.orders.length) {
+      document.getElementById('ordersContent').innerHTML = '<div style="text-align:center;padding:36px;color:#aaa;"><div style="font-size:2.5rem;margin-bottom:10px;">📭</div><p>No orders yet.</p></div>';
+      return;
+    }
+    document.getElementById('ordersContent').innerHTML = r.data.orders.map(function(o) {
+      var statusColor = o.status==='pending'?'#e02020':o.status==='delivered'?'#1a8a5a':'#555';
+      var statusBg    = o.status==='pending'?'rgba(224,32,32,.08)':o.status==='delivered'?'rgba(26,138,90,.08)':'rgba(0,0,0,.04)';
+      return '<div style="border:1px solid #eee;border-radius:9px;padding:14px;margin-bottom:10px;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
+        +'<div><div style="font-size:.72rem;color:#aaa;font-weight:600;">ORDER #'+o.id.slice(-8).toUpperCase()+'</div>'
+        +'<div style="font-size:.78rem;color:#999;margin-top:2px;">'+new Date(o.placed_at).toLocaleDateString('en-IN',{year:'numeric',month:'short',day:'numeric'})+'</div></div>'
+        +'<span style="padding:3px 10px;border-radius:20px;font-size:.68rem;font-weight:700;text-transform:uppercase;background:'+statusBg+';color:'+statusColor+';">'+o.status+'</span>'
+        +'</div>'
+        +'<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">'
+        +o.items.map(function(i){return '<span style="background:#f5f5f5;border-radius:5px;padding:3px 9px;font-size:.76rem;">'+i.name+' ×'+i.quantity+'</span>';}).join('')
+        +'</div><div style="font-weight:700;color:#e02020;font-size:.9rem;">₹'+o.total.toFixed(2)+'</div></div>';
+    }).join('');
+  }
+  function closeOrdersModal() {
+    document.getElementById('ordersOverlay').style.display = 'none';
+  }
+
+  // ── LOGOUT ────────────────────────────────────────────────
+  function handleLogout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.replace('./pages/login.html');
+  }
+
+  // ── API HELPER ────────────────────────────────────────────
+  async function apiCall(path, opts) {
+    opts = opts || {};
+    var headers = { 'Content-Type': 'application/json' };
+    if (state.token) headers['Authorization'] = 'Bearer ' + state.token;
+    var res  = await fetch(API + path, Object.assign({}, opts, { headers: headers }));
+    var data = await res.json();
+    return { ok: res.ok, data: data };
+  }
+
+  // ── TOAST ─────────────────────────────────────────────────
+  function toast(msg, type) {
+    type = type || 'success';
+    var el = document.createElement('div');
+    el.style.cssText = 'background:'+(type==='success'?'#1a8a5a':'#c01818')+';color:#fff;padding:11px 16px;border-radius:9px;font-size:.85rem;font-weight:500;font-family:Inter,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.18);';
+    el.textContent = (type==='success'?'✓ ':'✗ ') + msg;
+    document.getElementById('toastContainer').appendChild(el);
+    setTimeout(function(){ el.remove(); }, 3000);
+  }
+
+  // ── FIND OR CREATE PRODUCT ────────────────────────────────
+  async function findOrCreateProduct(name, price, image) {
+    var r = await apiCall('/products/');
+    if (r.ok) {
+      var found = r.data.products.find(function(p){ return p.name.toLowerCase() === name.toLowerCase(); });
+      if (found) return found.id;
+    }
+    var cr = await apiCall('/products/', { method:'POST', body: JSON.stringify({ name:name, price:price, description:name, image:image, category:'Groceries', stock:999 }) });
+    return cr.ok ? cr.data.product.id : null;
+  }
+
+  // ── CART ─────────────────────────────────────────────────
+  async function loadCart() {
+    var r = await apiCall('/cart/');
+    if (r.ok) { state.cart = r.data.items; updateCartBadge(); }
+  }
+  function updateCartBadge() {
+    var count = state.cart.reduce(function(a,i){ return a+i.quantity; }, 0);
+    var badge = document.getElementById('cartBadge');
+    if (!badge) return;
+    badge.textContent = count;
+    badge.style.display = count > 0 ? 'inline-block' : 'none';
+    var dc = document.getElementById('drawerCartCount');
+    if (dc) dc.textContent = count > 0 ? '('+count+')' : '';
+  }
+  async function addToCartByName(btn, name, price, image) {
+    if (!state.token) { window.location.replace('./pages/login.html'); return; }
+    btn.disabled = true; btn.textContent = '...';
+    var pid = await findOrCreateProduct(name, price, image);
+    if (!pid) { toast('Failed to add item.','error'); btn.disabled=false; btn.textContent='+ Add'; return; }
+    var r = await apiCall('/cart/', { method:'POST', body: JSON.stringify({ product_id:pid, quantity:1 }) });
+    if (r.ok) {
+      state.cart = r.data.items; updateCartBadge();
+      toast(name + ' added to cart! 🛒');
+      btn.textContent='✓ Added'; btn.style.background='#1a8a5a'; btn.style.color='#fff';
+      setTimeout(function(){ btn.textContent='+ Add'; btn.style.background=''; btn.style.color=''; btn.disabled=false; }, 1500);
+    } else { toast(r.data.error||'Failed.','error'); btn.disabled=false; btn.textContent='+ Add'; }
+  }
+  function openCartDrawer() { renderCartDrawer(); document.getElementById('cartDrawer').style.display='flex'; document.getElementById('cartOverlay').style.display='block'; }
+  function closeCartDrawer() { document.getElementById('cartDrawer').style.display='none'; document.getElementById('cartOverlay').style.display='none'; }
+  function renderCartDrawer() {
+    var el=document.getElementById('drawerCartItems'), footer=document.getElementById('drawerCartFooter');
+    if (!state.cart.length) { el.innerHTML='<div style="text-align:center;padding:36px;color:#aaa;"><div style="font-size:2.8rem;margin-bottom:10px;">🛒</div><p>Your cart is empty</p></div>'; footer.innerHTML=''; return; }
+    var total=state.cart.reduce(function(a,i){return a+i.price*i.quantity;},0);
+    el.innerHTML=state.cart.map(function(item){return '<div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #f0f0f0;"><div style="font-size:1.7rem;">'+(item.image||'📦')+'</div><div style="flex:1;"><div style="font-weight:600;font-size:.85rem;">'+item.name+'</div><div style="color:#aaa;font-size:.78rem;">₹'+item.price.toFixed(2)+' each</div></div><div style="display:flex;align-items:center;gap:6px;"><button onclick="updateCartQty(\''+item.product_id+'\',-1)" style="width:24px;height:24px;border:1px solid #ddd;border-radius:5px;background:#fff;cursor:pointer;font-size:.9rem;">−</button><span style="font-weight:600;min-width:18px;text-align:center;font-size:.85rem;">'+item.quantity+'</span><button onclick="updateCartQty(\''+item.product_id+'\',1)" style="width:24px;height:24px;border:1px solid #ddd;border-radius:5px;background:#fff;cursor:pointer;font-size:.9rem;">+</button></div><div style="font-weight:700;min-width:52px;text-align:right;font-size:.85rem;">₹'+(item.price*item.quantity).toFixed(2)+'</div><button onclick="removeCartItem(\''+item.product_id+'\')" style="border:none;background:none;color:#ccc;cursor:pointer;font-size:1rem;">🗑</button></div>';}).join('');
+    footer.innerHTML='<div style="display:flex;justify-content:space-between;margin-bottom:12px;"><span style="font-weight:600;">Total</span><span style="font-weight:700;font-size:1.05rem;color:#e02020;">₹'+total.toFixed(2)+'</span></div><button onclick="closeCartDrawer();openCheckout();" style="width:100%;padding:12px;border:none;border-radius:8px;background:#e02020;color:#fff;font-family:Inter,sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;">Proceed to Checkout →</button>';
+  }
+  async function updateCartQty(pid, delta) {
+    var item=state.cart.find(function(i){return i.product_id===pid;});
+    if (!item) return;
+    var nq=item.quantity+delta;
+    if (nq<1) return removeCartItem(pid);
+    var r=await apiCall('/cart/'+pid,{method:'PUT',body:JSON.stringify({quantity:nq})});
+    if (r.ok){state.cart=r.data.items;updateCartBadge();renderCartDrawer();}
+  }
+  async function removeCartItem(pid) {
+    var r=await apiCall('/cart/'+pid,{method:'DELETE'});
+    if (r.ok){state.cart=r.data.items;updateCartBadge();renderCartDrawer();toast('Item removed.');}
+  }
+
+  // ── WISHLIST ──────────────────────────────────────────────
+  async function loadWishlist() {
+    var r=await apiCall('/wishlist/');
+    if (r.ok){state.wishlist=r.data.items;updateWishlistBadge();}
+  }
+  function updateWishlistBadge() {
+    var badge=document.getElementById('wishlistBadge');
+    if (!badge) return;
+    badge.textContent=state.wishlist.length;
+    badge.style.display=state.wishlist.length>0?'inline-block':'none';
+    var dw=document.getElementById('drawerWishlistCount');
+    if (dw) dw.textContent=state.wishlist.length>0?'('+state.wishlist.length+')':'';
+  }
+  async function toggleWishlistByName(btn, name, price, image) {
+    if (!state.token){window.location.replace('./pages/login.html');return;}
+    var pid=await findOrCreateProduct(name,price,image);
+    if (!pid) return;
+    var r=await apiCall('/wishlist/',{method:'POST',body:JSON.stringify({product_id:pid})});
+    if (r.ok){
+      state.wishlist=r.data.items;updateWishlistBadge();
+      var added=r.data.action==='added';
+      btn.innerHTML=added?'&#9829;':'&#9825;';
+      btn.style.color=added?'#e02020':'';
+      toast(added?name+' saved to wishlist ❤️':name+' removed from wishlist');
+    }
+  }
+  function openWishlistDrawer(){renderWishlistDrawer();document.getElementById('wishlistDrawer').style.display='flex';document.getElementById('wishlistOverlay').style.display='block';}
+  function closeWishlistDrawer(){document.getElementById('wishlistDrawer').style.display='none';document.getElementById('wishlistOverlay').style.display='none';}
+  function renderWishlistDrawer(){
+    var el=document.getElementById('drawerWishlistItems');
+    if (!state.wishlist.length){el.innerHTML='<div style="text-align:center;padding:36px;color:#aaa;"><div style="font-size:2.8rem;margin-bottom:10px;">🤍</div><p>Your wishlist is empty</p></div>';return;}
+    el.innerHTML=state.wishlist.map(function(item){return '<div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #f0f0f0;"><div style="font-size:1.7rem;">'+(item.image||'📦')+'</div><div style="flex:1;"><div style="font-weight:600;font-size:.85rem;">'+item.name+'</div><div style="color:#e02020;font-weight:700;font-size:.85rem;">₹'+item.price.toFixed(2)+'</div></div><button onclick="addWishlistItemToCart(\''+item.product_id+'\',this)" style="padding:5px 11px;border:none;border-radius:5px;background:#e02020;color:#fff;font-size:.76rem;font-weight:600;cursor:pointer;">+ Cart</button><button onclick="removeWishlistItem(\''+item.product_id+'\')" style="border:none;background:none;color:#ccc;cursor:pointer;font-size:1rem;margin-left:4px;">🗑</button></div>';}).join('');
+  }
+  async function removeWishlistItem(pid){
+    var r=await apiCall('/wishlist/'+pid,{method:'DELETE'});
+    if (r.ok){state.wishlist=r.data.items;updateWishlistBadge();renderWishlistDrawer();toast('Removed from wishlist.');}
+  }
+  async function addWishlistItemToCart(pid,btn){
+    btn.disabled=true;btn.textContent='...';
+    var r=await apiCall('/cart/',{method:'POST',body:JSON.stringify({product_id:pid,quantity:1})});
+    if (r.ok){state.cart=r.data.items;updateCartBadge();var item=state.wishlist.find(function(i){return i.product_id===pid;});toast((item?item.name:'Item')+' added to cart! 🛒');btn.textContent='✓';btn.style.background='#1a8a5a';}
+    else{toast(r.data.error||'Failed.','error');btn.disabled=false;btn.textContent='+ Cart';}
+  }
+
+  // ── CHECKOUT ──────────────────────────────────────────────
+  function openCheckout(){
+    if (!state.cart.length){toast('Your cart is empty.','error');return;}
+    var total=state.cart.reduce(function(a,i){return a+i.price*i.quantity;},0);
+    document.getElementById('orderSummaryBox').innerHTML=
+      state.cart.map(function(i){return '<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>'+i.name+' x'+i.quantity+'</span><span>₹'+(i.price*i.quantity).toFixed(2)+'</span></div>';}).join('')+
+      '<div style="border-top:1px solid #ddd;margin-top:7px;padding-top:7px;font-weight:700;display:flex;justify-content:space-between;"><span>Total</span><span style="color:#e02020;">₹'+total.toFixed(2)+'</span></div>';
+    var alertEl=document.getElementById('checkoutAlert');alertEl.style.display='none';alertEl.textContent='';
+    document.getElementById('checkoutOverlay').style.display='flex';
+  }
+  function closeCheckout(){document.getElementById('checkoutOverlay').style.display='none';}
+  async function placeOrder(){
+    var address={full_name:document.getElementById('addrName').value.trim(),street:document.getElementById('addrStreet').value.trim(),city:document.getElementById('addrCity').value.trim(),zip:document.getElementById('addrZip').value.trim(),country:document.getElementById('addrCountry').value.trim()};
+    var btn=document.getElementById('placeOrderBtn');
+    btn.disabled=true;btn.textContent='Placing...';
+    var r=await apiCall('/orders/',{method:'POST',body:JSON.stringify({address:address})});
+    btn.disabled=false;btn.textContent='Place Order 🎉';
+    if (!r.ok){var el=document.getElementById('checkoutAlert');el.textContent=r.data.error||'Failed.';el.style.display='block';}
+    else{closeCheckout();state.cart=[];updateCartBadge();toast('Order placed successfully! 🎉');}
+  }
+  </script>
 
   <!-- Footer Section -->
 
@@ -736,7 +1116,7 @@
             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
             <polyline points="22,6 12,13 2,6" />
           </svg>
-          <a href="/cdn-cgi/l/email-protection#fe97909891be93878d978a9bd09d9193"><span class="__cf_email__" data-cfemail="30595e565f705d49435944551e535f5d">[email&#160;protected]</span></a>
+          <a href="/cdn-cgi/l/email-protection#c9a0a7afa689a4b0baa0bdace7aaa6a4"><span class="__cf_email__" data-cfemail="c8a1a6aea788a5b1bba1bcade6aba7a5">[email&#160;protected]</span></a>
         </div>
 
         <div class="payment-label">Payment Gateways</div>
@@ -753,11 +1133,4 @@
 
     <hr class="footer-divider">
 
-    <div class="footer-bottom">
-      <p>© 2025 FreshMart. All rights reserved.</p>
-    </div>
-
-  </footer>
-
-</body>
-</html>
+    <div class

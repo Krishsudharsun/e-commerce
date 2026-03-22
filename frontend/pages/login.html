@@ -34,7 +34,6 @@
       background: var(--a-bg);
     }
 
-    /* LEFT hero */
     .auth-hero {
       position: relative;
       background: url('https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200&q=80') center/cover no-repeat;
@@ -97,7 +96,6 @@
       gap: 6px;
     }
 
-    /* RIGHT form panel */
     .auth-panel {
       background: var(--a-white);
       display: flex;
@@ -135,7 +133,6 @@
       letter-spacing: -.02em;
     }
 
-    /* tabs */
     .tabs {
       display: flex;
       border: 1px solid var(--a-border);
@@ -164,7 +161,6 @@
       box-shadow: inset 0 -2px 0 var(--a-red);
     }
 
-    /* form */
     .form-group {
       margin-bottom: 16px;
     }
@@ -224,7 +220,6 @@
       color: #bbb;
       font-size: 14px;
       user-select: none;
-      transition: color .2s;
     }
 
     .toggle-pw:hover {
@@ -267,7 +262,6 @@
       text-decoration: underline;
     }
 
-    /* button */
     .btn {
       width: 100%;
       padding: 13px;
@@ -279,14 +273,13 @@
       font-size: .95rem;
       font-weight: 600;
       cursor: pointer;
-      letter-spacing: .01em;
       transition: background .2s, transform .15s, box-shadow .2s;
       position: relative;
       overflow: hidden;
       margin-top: 4px;
     }
 
-    .btn:hover {
+    .btn:hover:not(:disabled) {
       background: var(--a-red2);
       box-shadow: 0 6px 20px rgba(224, 32, 32, .3);
     }
@@ -296,7 +289,7 @@
     }
 
     .btn:disabled {
-      opacity: .55;
+      opacity: .65;
       cursor: not-allowed;
     }
 
@@ -321,11 +314,10 @@
 
     @keyframes spin {
       to {
-        transform: rotate(360deg)
+        transform: rotate(360deg);
       }
     }
 
-    /* divider + social */
     .auth-divider {
       display: flex;
       align-items: center;
@@ -372,7 +364,6 @@
       height: 18px;
     }
 
-    /* alert */
     .alert {
       display: none;
       padding: 10px 14px;
@@ -421,7 +412,6 @@
 
 <body>
 
-  <!-- LEFT: hero image -->
   <div class="auth-hero">
     <div class="auth-hero-content">
       <h1>Welcome to<br><span>FreshMart</span></h1>
@@ -434,31 +424,29 @@
     </div>
   </div>
 
-  <!-- RIGHT: form panel -->
   <div class="auth-panel">
     <div class="auth-panel-inner">
-
       <div class="auth-logo">FreshMart</div>
-
       <div class="tabs">
         <div class="tab active" onclick="switchTab('login')">Login</div>
         <div class="tab" onclick="switchTab('register')">Sign Up</div>
       </div>
 
-      <!-- Login Form -->
+      <!-- Login -->
       <div id="loginForm">
         <div class="form-group">
           <label>Email</label>
           <div class="input-wrap">
             <span class="input-icon">✉</span>
-            <input id="loginEmail" type="email" placeholder="Enter your email or phone" />
+            <input id="loginEmail" type="email" placeholder="Enter your email" autocomplete="email" />
           </div>
         </div>
         <div class="form-group">
           <label>Password</label>
           <div class="input-wrap">
             <span class="input-icon">🔒</span>
-            <input id="loginPassword" type="password" placeholder="Enter your password" />
+            <input id="loginPassword" type="password" placeholder="Enter your password"
+              autocomplete="current-password" />
             <span class="toggle-pw" onclick="togglePw('loginPassword',this)">👁</span>
           </div>
         </div>
@@ -496,32 +484,32 @@
             Policy</a></p>
       </div>
 
-      <!-- Register Form -->
+      <!-- Register -->
       <div id="registerForm" class="hidden">
         <div class="form-group">
           <label>Full Name</label>
           <div class="input-wrap">
             <span class="input-icon">👤</span>
-            <input id="regName" type="text" placeholder="Enter your full name" />
+            <input id="regName" type="text" placeholder="Enter your full name" autocomplete="name" />
           </div>
         </div>
         <div class="form-group">
           <label>Email</label>
           <div class="input-wrap">
             <span class="input-icon">✉</span>
-            <input id="regEmail" type="email" placeholder="Enter your email" />
+            <input id="regEmail" type="email" placeholder="Enter your email" autocomplete="email" />
           </div>
         </div>
         <div class="form-group">
           <label>Password</label>
           <div class="input-wrap">
             <span class="input-icon">🔒</span>
-            <input id="regPassword" type="password" placeholder="Min. 6 characters" />
+            <input id="regPassword" type="password" placeholder="Min. 6 characters" autocomplete="new-password" />
             <span class="toggle-pw" onclick="togglePw('regPassword',this)">👁</span>
           </div>
         </div>
         <div id="registerAlert" class="alert"></div>
-        <button class="btn" id="registerBtn" onclick="handleRegister()">
+        <button class="btn" id="registerBtn" onclick="handleRegister()" style="margin-top:8px">
           <span class="btn-label">Create Account</span>
           <div class="spinner"></div>
         </button>
@@ -549,79 +537,99 @@
   <script>
     const API = 'http://localhost:5000/api';
 
-    // ── Already logged in? Skip to app ──────────────────────────────
-    if (localStorage.getItem('token') && localStorage.getItem('user')) {
-      window.location.replace('../index.html');
-    }
+    // ── NO auto-redirect here — login page always shows the form ──────
+    // Only redirect AFTER successful login button click (see handleLogin below)
 
-    // ── Helpers ─────────────────────────────────────────────────────
     function switchTab(tab) {
-      document.querySelectorAll('.tab').forEach((t, i) =>
-        t.classList.toggle('active', (tab === 'login' && i === 0) || (tab === 'register' && i === 1)));
+      document.querySelectorAll('.tab').forEach(function (t, i) {
+        t.classList.toggle('active', (tab === 'login' && i === 0) || (tab === 'register' && i === 1));
+      });
       document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
       document.getElementById('registerForm').classList.toggle('hidden', tab !== 'register');
-      ['loginAlert', 'registerAlert'].forEach(id => {
-        const el = document.getElementById(id); el.className = 'alert'; el.textContent = '';
+      ['loginAlert', 'registerAlert'].forEach(function (id) {
+        var el = document.getElementById(id); el.className = 'alert'; el.textContent = '';
       });
     }
-    function showAlert(id, msg, type = 'error') {
-      const el = document.getElementById(id); el.textContent = msg; el.className = `alert ${type}`;
-    }
-    function setLoading(id, on) {
-      const btn = document.getElementById(id); btn.classList.toggle('loading', on); btn.disabled = on;
-    }
-    function togglePw(inputId, icon) {
-      const inp = document.getElementById(inputId);
-      inp.type = inp.type === 'password' ? 'text' : 'password';
-      icon.textContent = inp.type === 'text' ? '🙈' : '👁';
+
+    function showAlert(id, msg, type) {
+      type = type || 'error';
+      var el = document.getElementById(id);
+      el.textContent = msg;
+      el.className = 'alert ' + type;
     }
 
-    // ── Login ────────────────────────────────────────────────────────
+    function setLoading(id, on) {
+      var btn = document.getElementById(id);
+      btn.classList.toggle('loading', on);
+      btn.disabled = on;
+    }
+
+    function togglePw(inputId, icon) {
+      var inp = document.getElementById(inputId);
+      var hidden = inp.type === 'password';
+      inp.type = hidden ? 'text' : 'password';
+      icon.textContent = hidden ? '🙈' : '👁';
+    }
+
     async function handleLogin() {
-      const email = document.getElementById('loginEmail').value.trim();
-      const password = document.getElementById('loginPassword').value;
-      if (!email || !password) return showAlert('loginAlert', 'Please fill in all fields.');
+      var email = document.getElementById('loginEmail').value.trim();
+      var password = document.getElementById('loginPassword').value;
+      if (!email || !password) { showAlert('loginAlert', 'Please fill in all fields.'); return; }
+
       setLoading('loginBtn', true);
       try {
-        const res = await fetch(`${API}/auth/login`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
+        var res = await fetch(API + '/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, password: password })
         });
-        const data = await res.json();
-        if (!res.ok) { showAlert('loginAlert', data.error || 'Invalid email or password.'); return; }
+        var data = await res.json();
+        if (!res.ok) {
+          showAlert('loginAlert', data.error || 'Invalid email or password.');
+          setLoading('loginBtn', false);
+          return;
+        }
         showAlert('loginAlert', 'Login successful! Redirecting...', 'success');
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        setTimeout(() => window.location.replace('../index.html'), 800);
-      } catch { showAlert('loginAlert', 'Cannot reach server. Is the backend running?'); }
-      finally { setLoading('loginBtn', false); }
+        setTimeout(function () { window.location.replace('../index.html'); }, 900);
+      } catch (e) {
+        showAlert('loginAlert', 'Cannot reach server. Is the backend running?');
+        setLoading('loginBtn', false);
+      }
     }
 
-    // ── Register ─────────────────────────────────────────────────────
     async function handleRegister() {
-      const name = document.getElementById('regName').value.trim();
-      const email = document.getElementById('regEmail').value.trim();
-      const password = document.getElementById('regPassword').value;
-      if (!name || !email || !password) return showAlert('registerAlert', 'Please fill in all fields.');
-      if (password.length < 6) return showAlert('registerAlert', 'Password must be at least 6 characters.');
+      var name = document.getElementById('regName').value.trim();
+      var email = document.getElementById('regEmail').value.trim();
+      var password = document.getElementById('regPassword').value;
+      if (!name || !email || !password) { showAlert('registerAlert', 'Please fill in all fields.'); return; }
+      if (password.length < 6) { showAlert('registerAlert', 'Password must be at least 6 characters.'); return; }
+
       setLoading('registerBtn', true);
       try {
-        const res = await fetch(`${API}/auth/register`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, password })
+        var res = await fetch(API + '/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: name, email: email, password: password })
         });
-        const data = await res.json();
-        if (!res.ok) { showAlert('registerAlert', data.error || 'Registration failed.'); return; }
+        var data = await res.json();
+        if (!res.ok) {
+          showAlert('registerAlert', data.error || 'Registration failed.');
+          setLoading('registerBtn', false);
+          return;
+        }
         showAlert('registerAlert', 'Account created! Redirecting...', 'success');
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        setTimeout(() => window.location.replace('../index.html'), 800);
-      } catch { showAlert('registerAlert', 'Cannot reach server. Is the backend running?'); }
-      finally { setLoading('registerBtn', false); }
+        setTimeout(function () { window.location.replace('../index.html'); }, 900);
+      } catch (e) {
+        showAlert('registerAlert', 'Cannot reach server. Is the backend running?');
+        setLoading('registerBtn', false);
+      }
     }
 
-    // ── Enter key ────────────────────────────────────────────────────
-    document.addEventListener('keydown', e => {
+    document.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter') return;
       document.getElementById('loginForm').classList.contains('hidden') ? handleRegister() : handleLogin();
     });
