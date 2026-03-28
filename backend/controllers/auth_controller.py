@@ -10,7 +10,7 @@ SECRET_KEY = os.getenv("JWT_SECRET", "super-secret-key-change-in-production")
 TOKEN_EXPIRY_HOURS = int(os.getenv("TOKEN_EXPIRY_HOURS", 24))
 
 
-# ── helpers ───────────────────────────────────────────────────────────────────
+# ── helpers ────────────────────────────────────────────────────────────────────
 
 def _hash_password(plain: str) -> str:
     return bcrypt.hashpw(plain.encode(), bcrypt.gensalt()).decode()
@@ -30,13 +30,26 @@ def _generate_token(user_id: str, email: str) -> str:
 def _decode_token(token: str) -> dict:
     return jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
 
+def _parse_address(data: dict, prefix: str) -> dict:
+    """Extract address fields with optional prefix (e.g. 'primary_' or 'secondary_')."""
+    return {
+        "full_name":   (data.get(f"{prefix}full_name")   or "").strip(),
+        "street":      (data.get(f"{prefix}street")      or "").strip(),
+        "area":        (data.get(f"{prefix}area")        or "").strip(),
+        "city":        (data.get(f"{prefix}city")        or "").strip(),
+        "postal_code": (data.get(f"{prefix}postal_code") or "").strip(),
+        "state":       (data.get(f"{prefix}state")       or "").strip(),
+        "country":     (data.get(f"{prefix}country")     or "India").strip(),
+        "phone":       (data.get(f"{prefix}phone")       or "").strip(),
+    }
+
 
 # ── public controllers ──────────────────────────────────────────────────────────
 
 def register_user(data: dict) -> tuple[dict, int]:
-    name = (data.get("name") or "").strip()
-    email = (data.get("email") or "").strip().lower()
-    password = data.get("password") or ""
+    name     = (data.get("name")     or "").strip()
+    email    = (data.get("email")    or "").strip().lower()
+    password =  data.get("password") or ""
 
     if not name or not email or not password:
         return {"error": "Name, email, and password are required."}, 400
@@ -47,21 +60,35 @@ def register_user(data: dict) -> tuple[dict, int]:
     if db.users.find_one({"email": email}):
         return {"error": "An account with that email already exists."}, 409
 
-    user = User(email=email, password_hash=_hash_password(password), name=name)
-    result = db.users.insert_one(user.to_dict())
+    # Parse addresses — primary required fields: street, city, postal_code
+    primary   = _parse_address(data, "primary_")
+    secondary = _parse_address(data, "secondary_")
+
+    # Only save secondary if at least one field was filled
+    if not any(secondary.values()):
+        secondary = {}
+
+    user = User(
+        email=email,
+        password_hash=_hash_password(password),
+        name=name,
+        primary_address=primary,
+        secondary_address=secondary,
+    )
+    result  = db.users.insert_one(user.to_dict())
     inserted = db.users.find_one({"_id": result.inserted_id})
 
     token = _generate_token(str(result.inserted_id), email)
     return {
         "message": "Account created successfully.",
-        "token": token,
-        "user": User.from_dict(inserted),
+        "token":   token,
+        "user":    User.from_dict(inserted),
     }, 201
 
 
 def login_user(data: dict) -> tuple[dict, int]:
-    email = (data.get("email") or "").strip().lower()
-    password = data.get("password") or ""
+    email    = (data.get("email")    or "").strip().lower()
+    password =  data.get("password") or ""
 
     if not email or not password:
         return {"error": "Email and password are required."}, 400
@@ -74,8 +101,8 @@ def login_user(data: dict) -> tuple[dict, int]:
     token = _generate_token(str(user_doc["_id"]), email)
     return {
         "message": "Login successful.",
-        "token": token,
-        "user": User.from_dict(user_doc),
+        "token":   token,
+        "user":    User.from_dict(user_doc),
     }, 200
 
 
@@ -83,8 +110,8 @@ def get_current_user(token: str) -> tuple[dict, int]:
     if not token:
         return {"error": "Authorization token missing."}, 401
     try:
-        payload = _decode_token(token)
-        db = get_db()
+        payload  = _decode_token(token)
+        db       = get_db()
         user_doc = db.users.find_one({"_id": ObjectId(payload["sub"])})
         if not user_doc:
             return {"error": "User not found."}, 404
