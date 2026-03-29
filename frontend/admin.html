@@ -501,7 +501,7 @@
 
   // ── DASHBOARD ────────────────────────────────────────────
   async function loadDashboard() {
-    var r = await api('/products/admin/stats');
+    var r = await api('/admin/stats');
     if (!r.ok) return;
     var d = r.data;
     document.getElementById('statProducts').textContent = d.total_products;
@@ -674,7 +674,7 @@
 
   // ── ORDERS ───────────────────────────────────────────────
   async function loadOrders() {
-    var r = await api('/products/admin/orders');
+    var r = await api('/admin/orders');
     if (!r.ok) { toast('Failed to load orders.', 'error'); return; }
     allOrders = r.data.orders || [];
     renderOrders(allOrders);
@@ -717,7 +717,7 @@
 
   async function updateOrderStatus(orderId, selectEl) {
     var status = selectEl.value;
-    var r = await api('/products/admin/orders/' + orderId, {method:'PATCH', body:JSON.stringify({status})});
+    var r = await api('/admin/orders/' + orderId, {method:'PATCH', body:JSON.stringify({status})});
     if (!r.ok) { toast(r.data.error || 'Failed to update.', 'error'); loadOrders(); return; }
     // Update in allOrders cache
     var o = allOrders.find(function(x){ return x.id === orderId; });
@@ -732,7 +732,7 @@
 
   // ── USERS ────────────────────────────────────────────────
   async function loadUsers() {
-    var r = await api('/products/admin/users');
+    var r = await api('/admin/users');
     if (!r.ok) { toast('Failed to load users.', 'error'); return; }
     allUsers = r.data.users || [];
     renderUsers(allUsers);
