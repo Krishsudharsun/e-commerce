@@ -125,7 +125,7 @@ def admin_get_stats() -> tuple[dict, int]:
 
 
 def admin_get_all_orders() -> tuple[dict, int]:
-    from models.order import Order
+    from models.orders import Order
     db = get_db()
     orders = [Order.serialize(o) for o in db.orders.find().sort("placed_at", -1)]
     return {"orders": orders, "count": len(orders)}, 200
@@ -139,7 +139,7 @@ def admin_update_order_status(order_id: str, status: str) -> tuple[dict, int]:
         oid = ObjectId(order_id)
     except Exception:
         return {"error": "Invalid order ID."}, 400
-    from models.order import Order
+    from models.orders import Order
     db = get_db()
     if not db.orders.find_one({"_id": oid}):
         return {"error": "Order not found."}, 404
