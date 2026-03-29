@@ -1,5 +1,6 @@
 import sys
 import os
+import bcrypt
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -33,22 +34,47 @@ def seed_products():
     if db.products.count_documents({}) > 0:
         return
     sample = [
-        {"name": "Wireless Headphones", "price": 79.99, "description": "Noise-cancelling over-ear headphones with 30hr battery.", "image": "🎧", "category": "Electronics", "stock": 50},
-        {"name": "Running Sneakers",    "price": 59.99, "description": "Lightweight breathable mesh sneakers for daily runs.",     "image": "👟", "category": "Footwear",    "stock": 30},
-        {"name": "Leather Wallet",      "price": 29.99, "description": "Slim genuine leather bifold wallet with RFID blocking.",   "image": "👜", "category": "Accessories", "stock": 100},
-        {"name": "Smart Watch",         "price": 149.99,"description": "Fitness tracker with heart rate monitor and GPS.",         "image": "⌚", "category": "Electronics", "stock": 20},
-        {"name": "Sunglasses",          "price": 39.99, "description": "Polarised UV400 protection aviator sunglasses.",           "image": "🕶️","category": "Accessories", "stock": 60},
-        {"name": "Backpack",            "price": 49.99, "description": "30L waterproof hiking backpack with laptop sleeve.",       "image": "🎒", "category": "Bags",        "stock": 40},
-        {"name": "Coffee Maker",        "price": 89.99, "description": "12-cup programmable drip coffee maker with timer.",        "image": "☕", "category": "Kitchen",     "stock": 25},
-        {"name": "Yoga Mat",            "price": 24.99, "description": "Non-slip 6mm TPE eco-friendly yoga mat.",                  "image": "🧘", "category": "Sports",      "stock": 80},
+        {"name": "Fresh Mint",       "price": 1.00,  "description": "Fresh mint bunch, good quality.", "image": "🌿", "category": "Vegetables", "stock": 100},
+        {"name": "Fresh Coriander",  "price": 1.00,  "description": "Fresh coriander bunch.",          "image": "🌿", "category": "Vegetables", "stock": 100},
+        {"name": "Fresh Potato",     "price": 10.00, "description": "Farm fresh potatoes, 1kg.",       "image": "🥔", "category": "Vegetables", "stock": 200},
+        {"name": "Fresh Tomato",     "price": 9.00,  "description": "Ripe red tomatoes, 1kg.",         "image": "🍅", "category": "Vegetables", "stock": 150},
+        {"name": "Fresh Onion",      "price": 10.00, "description": "Fresh onions, 1kg.",              "image": "🧅", "category": "Vegetables", "stock": 200},
+        {"name": "Fresh Carrot",     "price": 12.00, "description": "Crunchy fresh carrots, 1kg.",     "image": "🥕", "category": "Vegetables", "stock": 120},
+        {"name": "Fresh Mint Leaves","price": 1.00,  "description": "Premium mint leaves bunch.",      "image": "🌿", "category": "Vegetables", "stock": 80},
+        {"name": "Egg",              "price": 1.00,  "description": "Farm fresh eggs.",                "image": "🥚", "category": "Dairy",      "stock": 500},
     ]
     db.products.insert_many(sample)
     print(f"🌱 Seeded {len(sample)} sample products.")
 
 
+def seed_admin():
+    db = get_db()
+    admin_email = os.getenv("ADMIN_EMAIL", "admin@freshmart.com")
+    admin_password = os.getenv("ADMIN_PASSWORD", "admin123")
+
+    if db.users.find_one({"email": admin_email}):
+        print(f"✅ Admin account already exists: {admin_email}")
+        return
+
+    from datetime import datetime
+    password_hash = bcrypt.hashpw(admin_password.encode(), bcrypt.gensalt()).decode()
+    db.users.insert_one({
+        "name":              "Admin",
+        "email":             admin_email,
+        "password_hash":     password_hash,
+        "role":              "admin",
+        "primary_address":   {},
+        "secondary_address": {},
+        "created_at":        datetime.utcnow(),
+        "updated_at":        datetime.utcnow(),
+    })
+    print(f"🔐 Admin account created → email: {admin_email}  password: {admin_password}")
+
+
 if __name__ == "__main__":
     connect_db()
     seed_products()
+    seed_admin()
     port = int(os.getenv("PORT", 5000))
     debug = os.getenv("FLASK_ENV", "development") == "development"
     print(f"🚀 Server running on http://localhost:{port}")
