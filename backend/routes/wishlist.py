@@ -4,24 +4,17 @@ from controllers.wishlist_controller import get_wishlist, toggle_wishlist, remov
 
 wishlist_bp = Blueprint("wishlist", __name__, url_prefix="/api/wishlist")
 
-
 @wishlist_bp.route("/", methods=["GET"])
 @require_auth
 def view_wishlist():
-    response, status = get_wishlist(g.user_id)
-    return jsonify(response), status
-
+    return jsonify(*get_wishlist(g.user_id))
 
 @wishlist_bp.route("/", methods=["POST"])
 @require_auth
 def toggle():
-    data = request.get_json(silent=True) or {}
-    response, status = toggle_wishlist(g.user_id, data)
-    return jsonify(response), status
-
+    return jsonify(*toggle_wishlist(g.user_id, request.get_json(silent=True) or {}))
 
 @wishlist_bp.route("/<product_id>", methods=["DELETE"])
 @require_auth
-def remove(product_id: str):
-    response, status = remove_from_wishlist(g.user_id, product_id)
-    return jsonify(response), status
+def remove(product_id):
+    return jsonify(*remove_from_wishlist(g.user_id, product_id))
