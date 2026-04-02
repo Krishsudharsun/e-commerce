@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // 3. USER LOGIN
 // ─────────────────────────────────────────
 
-const API = "http://127.0.0.1:8000/auth"
+const API = "http://127.0.0.1:5000/api/auth"
 
 async function userLogin() {
 
@@ -157,11 +157,9 @@ async function userLogin() {
 
     method: "POST",
 
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded"
-    },
+    headers: { "Content-Type": "application/json" },
 
-    body: `email=${email}&password=${password}`
+    body: JSON.stringify({ email, password })
 
   })
 
@@ -189,10 +187,8 @@ async function adminLogin() {
   let password = document.getElementById("admin_password").value
   let response = await fetch(API + "/login", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded"
-    },
-    body: `email=${email}&password=${password}`
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
   })
   let data = await response.json()
 

@@ -6,14 +6,6 @@ from controllers.order_controller import (
 
 orders_bp = Blueprint("orders", __name__, url_prefix="/api/orders")
 
-
-@orders_bp.route("/", methods=["GET"])
-@require_auth
-def list_orders():
-    response, status = get_user_orders(g.user_id)
-    return jsonify(response), status
-
-
 @orders_bp.route("/", methods=["POST"])
 @require_auth
 def create_order():
@@ -21,13 +13,17 @@ def create_order():
     response, status = place_order(g.user_id, data)
     return jsonify(response), status
 
+@orders_bp.route("/", methods=["GET"])
+@require_auth
+def list_orders():
+    response, status = get_user_orders(g.user_id)
+    return jsonify(response), status
 
 @orders_bp.route("/<order_id>", methods=["GET"])
 @require_auth
 def single_order(order_id: str):
     response, status = get_order(g.user_id, order_id)
     return jsonify(response), status
-
 
 @orders_bp.route("/<order_id>/cancel", methods=["PATCH"])
 @require_auth
