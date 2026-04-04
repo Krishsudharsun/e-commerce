@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from middleware.auth_middleware import require_role
 from controllers.product_controller import get_all_products, get_product, create_product
 
 products_bp = Blueprint("products", __name__, url_prefix="/api/products")
@@ -17,7 +18,9 @@ def single_product(product_id: str):
 
 
 @products_bp.route("/", methods=["POST"])
+@require_role("admin")
 def add_product():
+    """Only admins can create products."""
     data = request.get_json(silent=True) or {}
     response, status = create_product(data)
     return jsonify(response), status

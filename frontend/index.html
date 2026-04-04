@@ -52,7 +52,7 @@
 
   <nav class="navwrap">
     <div class="logo-bg">
-      <img src="assets/img/logo.png" alt="Logo_">
+      <img src="assets/img/logo.png" alt="Logo">
     </div>
 
     <div class="search">
@@ -115,19 +115,23 @@
           <div
             style="display:flex;justify-content:space-between;padding:10px 12px;background:#f8f8f8;border-radius:8px;">
             <span style="font-size:.83rem;color:#666;">Full Name</span><span id="accDetailName"
-              style="font-size:.83rem;font-weight:600;color:#1a1a1a;"></span></div>
+              style="font-size:.83rem;font-weight:600;color:#1a1a1a;"></span>
+          </div>
           <div
             style="display:flex;justify-content:space-between;padding:10px 12px;background:#f8f8f8;border-radius:8px;">
             <span style="font-size:.83rem;color:#666;">Email</span><span id="accDetailEmail"
-              style="font-size:.83rem;font-weight:600;color:#1a1a1a;"></span></div>
+              style="font-size:.83rem;font-weight:600;color:#1a1a1a;"></span>
+          </div>
           <div
             style="display:flex;justify-content:space-between;padding:10px 12px;background:#f8f8f8;border-radius:8px;">
             <span style="font-size:.83rem;color:#666;">Status</span><span
-              style="font-size:.83rem;font-weight:600;color:#1a8a5a;">✓ Active</span></div>
+              style="font-size:.83rem;font-weight:600;color:#1a8a5a;">✓ Active</span>
+          </div>
           <div
             style="display:flex;justify-content:space-between;padding:10px 12px;background:#f8f8f8;border-radius:8px;">
             <span style="font-size:.83rem;color:#666;">Member Since</span><span id="accDetailJoined"
-              style="font-size:.83rem;font-weight:600;color:#1a1a1a;"></span></div>
+              style="font-size:.83rem;font-weight:600;color:#1a1a1a;"></span>
+          </div>
         </div>
         <button onclick="handleLogout()"
           style="width:100%;margin-top:16px;padding:11px;border:none;border-radius:8px;background:#e02020;color:#fff;font-family:'Inter',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;">🚪
@@ -674,12 +678,12 @@
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
         <div><label
             style="font-size:.78rem;font-weight:600;color:#555;display:block;margin-bottom:4px;">State</label><input
-            id="addrState" type="text" placeholder="Tamil Nadu"
+            id="addrState" type="text" placeholder="Tamil Nadu" value="Tamil Nadu"
             style="width:100%;padding:9px 11px;border:1px solid #ddd;border-radius:7px;font-family:'Inter',sans-serif;font-size:.88rem;outline:none;" />
         </div>
         <div><label
             style="font-size:.78rem;font-weight:600;color:#555;display:block;margin-bottom:4px;">Country</label><input
-            id="addrCountry" type="text" placeholder="India"
+            id="addrCountry" type="text" placeholder="India" value="India"
             style="width:100%;padding:9px 11px;border:1px solid #ddd;border-radius:7px;font-family:'Inter',sans-serif;font-size:.88rem;outline:none;" />
         </div>
       </div>
@@ -704,7 +708,7 @@
 
   <script>
     // ── ALL APP CODE — runs before app.js so errors there don't block us ──
-    var BASE_API = 'http://localhost:5000/api';
+    var BASE_API = 'https://b3c4-2405-201-e026-501c-9c35-808-d8d-3ae4.ngrok-free.app/api';
     var state = { token: null, user: null, cart: [], wishlist: [] };
 
     // ── INIT ────────────────────────────────────────────────
@@ -778,7 +782,7 @@
     // ── API HELPER ───────────────────────────────────────────
     async function apiCall(path, opts) {
       opts = opts || {};
-      var headers = { 'Content-Type': 'application/json' };
+      var headers = { 'Content-Type': 'application/json','ngrok-skip-browser-warning': 'true' };
       if (state.token) headers['Authorization'] = 'Bearer ' + state.token;
       var res = await fetch(BASE_API + path, Object.assign({}, opts, { headers: headers }));
       var data = await res.json();
@@ -971,14 +975,14 @@
 
     async function placeOrder() {
       var address = {
-        full_name:   document.getElementById('addrName').value.trim(),
-        phone:       document.getElementById('addrPhone').value.trim(),
-        street:      document.getElementById('addrStreet').value.trim(),
-        area:        document.getElementById('addrArea').value.trim(),
-        city:        document.getElementById('addrCity').value.trim(),
+        full_name: document.getElementById('addrName').value.trim(),
+        phone: document.getElementById('addrPhone').value.trim(),
+        street: document.getElementById('addrStreet').value.trim(),
+        area: document.getElementById('addrArea').value.trim(),
+        city: document.getElementById('addrCity').value.trim(),
         postal_code: document.getElementById('addrZip').value.trim(),
-        state:       document.getElementById('addrState').value.trim(),
-        country:     document.getElementById('addrCountry').value.trim() || 'India',
+        state: document.getElementById('addrState').value.trim(),
+        country: document.getElementById('addrCountry').value.trim() || 'India',
       };
 
       if (!address.street || !address.city || !address.postal_code) {
@@ -993,7 +997,7 @@
       }
 
       var btn = document.getElementById('placeOrderBtn');
-      btn.disabled = true; btn.textContent = 'Redirecting to payment...';
+      btn.disabled = true; btn.textContent = 'Connecting to payment...';
 
       var r = await apiCall('/payments/initiate', {
         method: 'POST',
@@ -1001,42 +1005,42 @@
       });
 
       if (!r.ok) {
-        btn.disabled = false; btn.textContent = 'Pay Now';
+        btn.disabled = false; btn.textContent = 'Pay Now via Instamojo';
         var el = document.getElementById('checkoutAlert');
         el.textContent = r.data.error || 'Payment initiation failed.';
         el.style.display = 'block'; return;
       }
 
-      // Store order_id so we can show status after redirect comes back
+      // If mock mode is active the payment_url points back to this page directly
       sessionStorage.setItem('pending_order_id', r.data.order_id);
-      sessionStorage.setItem('pending_payment_request_id', r.data.payment_request_id);
-
-      // Redirect user to Instamojo payment page
+      sessionStorage.setItem('pending_payment_request_id', r.data.payment_request_id || '');
       window.location.href = r.data.payment_url;
     }
 
-    // Called on page load to show result if user just returned from Instamojo
     (function checkPaymentReturn() {
       var params = new URLSearchParams(window.location.search);
       var paymentId = params.get('payment_id');
-      var prId      = params.get('payment_request_id');
-      var failed    = params.get('failed');
+      var prId = params.get('payment_request_id');
+      var failed = params.get('failed');
+      var orderId = params.get('order_id') || '';
 
       if (paymentId && prId) {
-        // User returned from successful Instamojo page — verify status
-        apiCall('/payments/status/' + prId + '/' + paymentId).then(function(r) {
+        apiCall('/payments/status/' + prId + '/' + paymentId).then(function (r) {
           if (r.ok && r.data.status === 'Credit') {
             state.cart = []; updateCartBadge();
-            showPaymentResult(true, r.data.order_id);
+            showPaymentResult(true, r.data.order_id || orderId);
           } else {
-            showPaymentResult(false, r.data.order_id || '');
+            showPaymentResult(false, r.data.order_id || orderId);
           }
-        });
-        // Clean URL
+        }).catch(function () { showPaymentResult(false, orderId); });
         window.history.replaceState({}, '', window.location.pathname);
       } else if (failed === '1') {
-        var orderId = params.get('order_id') || '';
         showPaymentResult(false, orderId);
+        window.history.replaceState({}, '', window.location.pathname);
+      } else if (orderId && !paymentId && !failed) {
+        // Mock mode: order_id returned directly, already confirmed
+        state.cart = []; updateCartBadge();
+        showPaymentResult(true, orderId);
         window.history.replaceState({}, '', window.location.pathname);
       }
     })();
@@ -1046,18 +1050,29 @@
       overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;display:flex;align-items:center;justify-content:center;';
       var box = document.createElement('div');
       box.style.cssText = 'background:#fff;border-radius:16px;padding:36px 32px;text-align:center;width:340px;font-family:Inter,sans-serif;';
-      box.innerHTML = success
-        ? '<div style="font-size:3rem;margin-bottom:12px;">✅</div>'
+
+      if (success) {
+        box.innerHTML =
+          '<div style="font-size:3rem;margin-bottom:12px;">✅</div>'
           + '<div style="font-size:1.2rem;font-weight:700;margin-bottom:8px;">Payment Successful!</div>'
           + '<div style="font-size:.88rem;color:#666;margin-bottom:6px;">Your order has been confirmed.</div>'
           + (orderId ? '<div style="font-size:.78rem;color:#aaa;margin-bottom:20px;">Order ID: ' + orderId.slice(-8).toUpperCase() + '</div>' : '')
-          + '<button onclick="this.closest(\'div[style]\').remove()" style="padding:11px 28px;border:none;border-radius:8px;background:#1a8a5a;color:#fff;font-family:inherit;font-size:.9rem;font-weight:600;cursor:pointer;">Continue Shopping</button>'
-        : '<div style="font-size:3rem;margin-bottom:12px;">❌</div>'
+          + '<button id="payResultBtn" style="padding:11px 28px;border:none;border-radius:8px;background:#1a8a5a;color:#fff;font-family:inherit;font-size:.9rem;font-weight:600;cursor:pointer;">Continue Shopping</button>';
+      } else {
+        box.innerHTML =
+          '<div style="font-size:3rem;margin-bottom:12px;">❌</div>'
           + '<div style="font-size:1.2rem;font-weight:700;margin-bottom:8px;">Payment Failed</div>'
           + '<div style="font-size:.88rem;color:#666;margin-bottom:20px;">Your cart has been restored. Please try again.</div>'
-          + '<button onclick="this.closest(\'div[style]\').remove()" style="padding:11px 28px;border:none;border-radius:8px;background:#e02020;color:#fff;font-family:inherit;font-size:.9rem;font-weight:600;cursor:pointer;">Try Again</button>';
+          + '<button id="payResultBtn" style="padding:11px 28px;border:none;border-radius:8px;background:#e02020;color:#fff;font-family:inherit;font-size:.9rem;font-weight:600;cursor:pointer;">Try Again</button>';
+      }
+
       overlay.appendChild(box);
       document.body.appendChild(overlay);
+
+      // Attach close handler after the element is in the DOM — avoids inline quote issues entirely
+      document.getElementById('payResultBtn').addEventListener('click', function () {
+        overlay.remove();
+      });
     }
   </script>
 
