@@ -103,8 +103,9 @@ def create_payment_request(user_id: str, data: dict) -> tuple[dict, int]:
     user       = db.users.find_one({"_id": ObjectId(user_id)})
     address    = data.get("address", {})
     buyer_name = user.get("name", "Customer")
-    email      = user.get("email", "") or data.get("email", "")
-    phone      = user.get("phone", "") or data.get("phone", "")
+    email      = user.get("email", "") or data.get("email", "") or address.get("email", "")
+    # Phone priority: 1) address field in checkout form  2) user profile  3) top-level data
+    phone      = (address.get("phone", "") or user.get("phone", "") or data.get("phone", ""))
 
     # Instamojo requires a phone number for Indian payments
     if not phone:
