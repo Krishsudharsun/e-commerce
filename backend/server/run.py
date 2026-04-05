@@ -8,7 +8,7 @@ load_dotenv(os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env"
 ))
 
-from flask import Flask
+from flask import Flask, jsonify, request, make_response
 from flask_cors import CORS
 from config.db import connect_db, get_db
 from routes.auth     import auth_bp
@@ -19,11 +19,48 @@ from routes.wishlist import wishlist_bp
 from routes.payment  import payments_bp
 
 app = Flask(__name__)
-CORS(app,
-     origins=["http://localhost:3000", "http://127.0.0.1:3000",
-               "http://localhost:5500", "http://127.0.0.1:5500",
-               "null", "*"],
-     supports_credentials=True)
+
+# Allow all origins — tightened per-route in production
+CORS(app, supports_credentials=True, origins="*")
+
+
+# ── Intercept every OPTIONS preflight and return 200 immediately ──────────────
+# Browsers send OPTIONS before every cross-origin POST/PUT/DELETE.
+# If Flask doesn't respond with CORS headers, the real request is never sent.
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = make_response()
+        response.headers["Access-Control-Allow-Origin"]      = request.headers.get("Origin", "*")
+        response.headers["Access-Control-Allow-Headers"]     = "Content-Type, Authorization, ngrok-skip-browser-warning"
+        response.headers["Access-Control-Allow-Methods"]     = "GET, POST, PUT, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Max-Age"]           = "3600"
+        response.status_code = 200
+        return response
+
+
+# ── Inject CORS headers on every response (including 4xx / 5xx) ──────────────
+@app.after_request
+def apply_cors(response):
+    origin = request.headers.get("Origin", "*")
+    response.headers["Access-Control-Allow-Origin"]      = origin
+    response.headers["Access-Control-Allow-Headers"]     = "Content-Type, Authorization, ngrok-skip-browser-warning"
+    response.headers["Access-Control-Allow-Methods"]     = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
+
+
+# ── Catch all unhandled exceptions — return JSON so CORS headers are applied ──
+@app.errorhandler(Exception)
+def handle_exception(e):
+    import traceback
+    traceback.print_exc()
+    response = jsonify({"error": "Internal server error", "detail": str(e)})
+    response.status_code = 500
+    return response
+# ─────────────────────────────────────────────────────────────────────────────
+
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(products_bp)
