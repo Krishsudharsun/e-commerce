@@ -187,6 +187,19 @@
       transition: border-color .2s, box-shadow .2s;
     }
 
+    .selectArea {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: .9rem;
+      padding: 11px 14px 11px 38px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
     input:focus {
       border-color: var(--red);
       box-shadow: 0 0 0 3px rgba(224, 32, 32, .08);
@@ -505,10 +518,7 @@
 
         <!-- LOGIN TAB -->
         <div id="loginForm">
-          <p style="font-size:.88rem;color:var(--muted);margin-bottom:18px;line-height:1.6;">
-            Enter your mobile number. We'll send a 6-digit OTP to log in.
-          </p>
-
+          
           <div class="form-group">
             <label>Mobile Number</label>
             <div class="otp-row">
@@ -631,8 +641,29 @@
             </div>
           </div>
 
+          <!-- Vendor request toggle -->
+          <div class="form-group" style="margin-top:4px;">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;">
+              <input type="checkbox" id="regIsVendor" onchange="toggleVendorFields()"
+                style="width:17px;height:17px;accent-color:var(--primary);cursor:pointer;">
+              <span>I want to sell on FreshMart <span style="color:var(--muted);font-size:.78rem;">(vendor account)</span></span>
+            </label>
+          </div>
+          <div id="vendorFields" class="hidden">
+            <div class="form-group">
+              <label>Business / Store Name</label>
+              <div class="input-wrap">
+                <span class="input-icon">🏪</span>
+                <input id="regBusinessName" type="text" placeholder="e.g. Fresh Picks Store" />
+              </div>
+              <p style="font-size:.75rem;color:var(--muted);margin-top:4px;">
+                Your account has been created (under review). Our admin team will reach you shortly.
+              </p>
+            </div>
+          </div>
+
           <div class="addr-section">
-            <div class="addr-title">📍 Primary Address</div>
+            <div class="addr-title" id="isVendorAddress">📍 Primary Address</div>
             <div class="form-group">
               <label>Street / House No.</label>
               <div class="input-wrap">
@@ -644,7 +675,15 @@
               <label>Area / Locality</label>
               <div class="input-wrap">
                 <span class="input-icon">📌</span>
-                <input id="regArea" type="text" placeholder="e.g. T. Nagar" />
+                <select  id="regArea" class="selectArea">
+                  <option value="">Select area</option>
+                  <option value="Valasaravakkam">Valasaravakkam</option>
+                  <option value="anna_nagar">Anna Nagar</option>
+                  <option value="adyar">Adyar</option>
+                  <option value="t_nagar">T. Nagar</option>
+                  <option value="velachery">Velachery</option>
+                  <option value="porur">Porur</option>
+                </select>
               </div>
             </div>
             <div class="addr-grid">
@@ -673,7 +712,7 @@
     // Replace YOUR_NGROK_URL with your current ngrok forwarding URL, e.g.:
     //   https://abc123.ngrok-free.app
     // Keep /api at the end. Update this every time ngrok restarts.
-    var API = 'https://f3c7-2405-201-e026-501c-f943-ce80-b094-69ba.ngrok-free.app/api';
+    var API = 'https://115f-49-37-195-104.ngrok-free.app/api';
 
     // Common headers for every fetch call — Content-Type + ngrok bypass
     var HEADERS = {
@@ -683,6 +722,13 @@
     // ───────────────────────────────────────────────────────────────────────────
 
     var regPhoneVerified = false;
+    var buisness_addr = '📍 Business Address';
+
+    function toggleVendorFields() {
+      var checked = document.getElementById('regIsVendor').checked;
+      document.getElementById('vendorFields').classList.toggle('hidden', !checked);
+      document.getElemntById('isVendorAddress').textContent = buisness_addr;
+    }
 
     (function checkAuth() {
       var token = localStorage.getItem('token');
@@ -742,7 +788,13 @@
 
     function redirectAfterLogin(user) {
       sessionStorage.setItem('loginToast', 'Welcome, ' + user.name.split(' ')[0] + '!');
-      window.location.replace('../index.html');
+      if (user.role === 'admin') {
+        window.location.replace('../pages/admin.html');
+      } else if (user.role === 'vendor') {
+        window.location.replace('../pages/vendor.html');
+      } else {
+        window.location.replace('../index.html');
+      }
     }
 
     function toggleEmailFallback() {
@@ -768,10 +820,10 @@
       document.getElementById('loginSendOtpBtn').disabled = true;
       document.getElementById('loginSendOtpBtn').textContent = '...';
       try {
-        var res = await fetch(API + '/auth/otp/send', { method: 'POST', headers: HEADERS, body: JSON.stringify({ phone: phone }) });
+        var res = await fetch(API + '/auth/otp/send', { method: 'POST', headers: HEADERS, body: JSON.stringify({ phone: phone, context: 'login' }) });
         var data = await res.json();
         if (!res.ok) { showAlert('loginAlert', data.error || 'Failed to send OTP.'); document.getElementById('loginSendOtpBtn').disabled = false; document.getElementById('loginSendOtpBtn').textContent = 'Send OTP'; return; }
-        showAlert('loginAlert', 'OTP sent! Check your SMS (or server console in dev mode).', 'info');
+        showAlert('loginAlert', 'OTP sent! Check your SMS.', 'info');
         document.getElementById('loginOtpRow').classList.remove('hidden');
         document.getElementById('loginBtn').classList.remove('hidden');
         document.getElementById('loginSendOtpBtn').textContent = 'Resend';
@@ -785,10 +837,10 @@
       document.getElementById('emailSendOtpBtn').disabled = true;
       document.getElementById('emailSendOtpBtn').textContent = '...';
       try {
-        var res = await fetch(API + '/auth/otp/send', { method: 'POST', headers: HEADERS, body: JSON.stringify({ email: email }) });
+        var res = await fetch(API + '/auth/otp/send', { method: 'POST', headers: HEADERS, body: JSON.stringify({ email: email, context: 'login' }) });
         var data = await res.json();
         if (!res.ok) { showAlert('loginAlert', data.error || 'Failed to send OTP.'); document.getElementById('emailSendOtpBtn').disabled = false; document.getElementById('emailSendOtpBtn').textContent = 'Send OTP'; return; }
-        showAlert('loginAlert', 'OTP sent to ' + email + '. Check your inbox (or server console in dev mode).', 'info');
+        showAlert('loginAlert', 'OTP sent to ' + email + '. Check your inbox.', 'info');
         document.getElementById('emailOtpRow').classList.remove('hidden');
         document.getElementById('loginBtn').classList.remove('hidden');
         document.getElementById('emailSendOtpBtn').textContent = 'Resend';
@@ -881,7 +933,7 @@
 
     async function handleRegister() {
       var name = document.getElementById('regName').value.trim();
-      var email = document.getElementById('regEmail').value.trim();
+      var email = document.getElementById('regEmail').value.toLowerCase().trim();
       var password = document.getElementById('regPassword').value;
       var phone = document.getElementById('regPhone').value.trim();
       if (!name || !email || !password) { showAlert('registerAlert', 'Name, email, and password are required.'); return; }
@@ -889,8 +941,11 @@
       if (!phone) { showAlert('registerAlert', 'Phone number is required.'); return; }
       if (!regPhoneVerified) { showAlert('registerAlert', 'Please verify your phone via OTP first.'); return; }
 
+      var wantsVendor = document.getElementById('regIsVendor').checked;
       var payload = {
         name: name, email: email, password: password, phone: phone,
+        wants_vendor: wantsVendor,
+        business_name: wantsVendor ? document.getElementById('regBusinessName').value.trim() : '',
         primary_full_name: name,
         primary_street: document.getElementById('regStreet').value.trim(),
         primary_area: document.getElementById('regArea').value.trim(),

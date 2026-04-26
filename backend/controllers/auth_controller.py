@@ -53,8 +53,8 @@ def register_user(data: dict) -> tuple[dict, int]:
 
     if not name or not email or not password:
         return {"error": "Name, email, and password are required."}, 400
-    if len(password) < 6:
-        return {"error": "Password must be at least 6 characters."}, 400
+    if len(password) < 8:
+        return {"error": "Password must be at least 8 characters."}, 400
 
     if phone:
         phone = _normalize_phone(phone)
@@ -74,10 +74,16 @@ def register_user(data: dict) -> tuple[dict, int]:
     if not any(secondary.values()):
         secondary = {}
 
-    user   = User(email=email, password_hash=_hash_password(password),
-                  name=name, role="user", phone=phone,
-                  primary_address=primary, secondary_address=secondary)
-    result   = db.users.insert_one(user.to_dict())
+    wants_vendor  = bool(data.get("wants_vendor"))
+    business_name = (data.get("business_name") or "").strip()
+
+    user_dict = User(email=email, password_hash=_hash_password(password),
+                     name=name, role="user", phone=phone,
+                     primary_address=primary, secondary_address=secondary).to_dict()
+    if wants_vendor:
+        user_dict["wants_vendor"]  = True
+        user_dict["business_name"] = business_name
+    result   = db.users.insert_one(user_dict)
     inserted = db.users.find_one({"_id": result.inserted_id})
 
     token = _generate_token(str(result.inserted_id), email, role="user")

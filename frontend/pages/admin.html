@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard | FreshMart</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:      #2e7d32;
+      --green-light:#43a047;
+      --green-bg:   #e8f5e9;
+      --red:        #c62828;
+      --red-light:  #ef5350;
+      --red-bg:     #ffebee;
+      --amber:      #f57c00;
+      --amber-bg:   #fff3e0;
+      --blue:       #1565c0;
+      --blue-bg:    #e3f2fd;
+      --gray1:      #f5f5f5;
+      --gray2:      #eeeeee;
+      --gray3:      #bdbdbd;
+      --gray4:      #757575;
+      --gray5:      #424242;
+      --text:       #212121;
+      --white:      #ffffff;
+      --shadow:     0 2px 8px rgba(0,0,0,.10);
+      --radius:     10px;
+    }
+
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--gray1); color: var(--text); min-height: 100vh; }
+
+    /* TOP BAR */
+    header {
+      background: var(--green); color: var(--white);
+      padding: 0 24px; height: 58px;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: var(--shadow); position: sticky; top: 0; z-index: 100;
+    }
+    .brand { font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .brand span { background: var(--white); color: var(--green); border-radius: 6px; padding: 2px 8px; font-size: .78rem; font-weight: 700; }
+    .user-info { display: flex; align-items: center; gap: 10px; font-size: .875rem; }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--green-light); border: 2px solid rgba(255,255,255,.4); display: flex; align-items: center; justify-content: center; font-weight: 700; }
+    .logout-btn { background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3); color: var(--white); padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: .82rem; }
+    .logout-btn:hover { background: rgba(255,255,255,.28); }
+
+    /* TABS */
+    .tab-bar { background: var(--white); border-bottom: 1px solid var(--gray2); display: flex; padding: 0 24px; overflow-x: auto; }
+    .tab-btn { padding: 14px 18px; border: none; background: none; cursor: pointer; font-size: .875rem; font-weight: 500; color: var(--gray4); border-bottom: 3px solid transparent; white-space: nowrap; transition: color .2s; }
+    .tab-btn:hover { color: var(--green); }
+    .tab-btn.active { color: var(--green); border-bottom-color: var(--green); }
+    .cnt { background: var(--green-bg); color: var(--green); border-radius: 10px; padding: 1px 7px; font-size: .72rem; margin-left: 5px; font-weight: 600; }
+
+    /* MAIN */
+    main { max-width: 1200px; margin: 0 auto; padding: 24px 20px; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* SECTION HEAD */
+    .sh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+    .sh-title { font-size: 1.05rem; font-weight: 600; color: var(--gray5); }
+
+    /* BUTTONS */
+    .btn { display: inline-flex; align-items: center; gap: 5px; padding: 8px 15px; border-radius: 7px; border: none; cursor: pointer; font-size: .85rem; font-weight: 500; transition: opacity .2s, transform .1s; }
+    .btn:active { transform: scale(.97); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-primary { background: var(--green); color: var(--white); }
+    .btn-primary:hover:not(:disabled) { background: var(--green-light); }
+    .btn-danger  { background: var(--red);   color: var(--white); }
+    .btn-danger:hover:not(:disabled) { background: var(--red-light); }
+    .btn-warn    { background: var(--amber); color: var(--white); }
+    .btn-warn:hover:not(:disabled) { background: #ffa726; }
+    .btn-ghost   { background: var(--gray2); color: var(--gray5); }
+    .btn-ghost:hover:not(:disabled) { background: var(--gray3); }
+    .btn-sm { padding: 5px 10px; font-size: .78rem; }
+
+    /* TABLE */
+    .table-wrap { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    thead th { background: var(--gray1); padding: 10px 14px; text-align: left; font-weight: 600; color: var(--gray5); border-bottom: 1px solid var(--gray2); white-space: nowrap; }
+    tbody td { padding: 10px 14px; border-bottom: 1px solid var(--gray2); vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: #f9fbe7; }
+
+    /* BADGES */
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: .72rem; font-weight: 600; }
+    .bg  { background: var(--green-bg); color: var(--green); }
+    .br  { background: var(--red-bg);   color: var(--red); }
+    .ba  { background: var(--amber-bg); color: var(--amber); }
+    .bb  { background: var(--blue-bg);  color: var(--blue); }
+    .bgr { background: var(--gray2);    color: var(--gray4); }
+    .bp  { background: #f3e5f5;         color: #6a1b9a; }
+
+    /* MODAL */
+    .mo { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 500; display: none; align-items: center; justify-content: center; padding: 16px; }
+    .mo.open { display: flex; }
+    .mc { background: var(--white); border-radius: var(--radius); padding: 26px; width: 100%; max-width: 480px; box-shadow: 0 8px 32px rgba(0,0,0,.18); max-height: 90vh; overflow-y: auto; }
+    .mc h3 { font-size: 1rem; font-weight: 700; margin-bottom: 18px; color: var(--gray5); }
+    .xbtn { float: right; background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--gray4); margin-top: -4px; line-height: 1; }
+
+    /* FORM */
+    .fg { margin-bottom: 13px; }
+    .fg label { display: block; font-size: .78rem; font-weight: 600; color: var(--gray5); margin-bottom: 4px; }
+    .fg input, .fg select, .fg textarea { width: 100%; padding: 8px 11px; border: 1px solid var(--gray3); border-radius: 7px; font-size: .85rem; font-family: inherit; }
+    .fg input:focus, .fg select:focus, .fg textarea:focus { outline: none; border-color: var(--green); }
+    .fr { display: flex; gap: 11px; }
+    .fr .fg { flex: 1; }
+    .mf { display: flex; justify-content: flex-end; gap: 9px; margin-top: 18px; }
+
+    /* TOAST */
+    #toast { position: fixed; bottom: 24px; right: 24px; padding: 10px 18px; border-radius: 8px; font-size: .85rem; box-shadow: var(--shadow); opacity: 0; transition: opacity .3s; z-index: 900; pointer-events: none; max-width: 300px; background: var(--gray5); color: var(--white); }
+    #toast.show { opacity: 1; }
+    #toast.ok  { background: var(--green); }
+    #toast.err { background: var(--red); }
+
+    /* MISC */
+    .empty { text-align: center; padding: 48px 20px; color: var(--gray4); }
+    .empty .ico { font-size: 2.2rem; margin-bottom: 8px; }
+    .spin-wrap { display: flex; align-items: center; justify-content: center; padding: 40px; gap: 10px; color: var(--gray4); }
+    .spin { display: inline-block; width: 20px; height: 20px; border: 3px solid var(--gray2); border-top-color: var(--green); border-radius: 50%; animation: sp .7s linear infinite; }
+    @keyframes sp { to { transform: rotate(360deg); } }
+    .sb { display: flex; gap: 8px; align-items: center; }
+    .sb input { padding: 7px 11px; border: 1px solid var(--gray3); border-radius: 7px; font-size: .85rem; width: 210px; }
+    .sb input:focus { outline: none; border-color: var(--green); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand">🛒 FreshMart <span>ADMIN</span></div>
+  <div class="user-info">
+    <div class="avatar" id="adminAvatar">A</div>
+    <span id="adminName">Admin</span>
+    <button class="logout-btn" onclick="handleLogout()">Logout</button>
+  </div>
+</header>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('products')" id="tab-products">🛍️ Products<span class="cnt" id="cnt-products">…</span></button>
+  <button class="tab-btn"        onclick="switchTab('users')"    id="tab-users">👤 Users<span class="cnt" id="cnt-users">…</span><span id="vendor-dot" style="display:none;width:8px;height:8px;background:#f57c00;border-radius:50%;margin-left:5px;vertical-align:middle;"></span></button>
+  <button class="tab-btn"        onclick="switchTab('orders')"   id="tab-orders">📦 Orders<span class="cnt" id="cnt-orders">…</span></button>
+  <button class="tab-btn"        onclick="switchTab('admins')"   id="tab-admins">🔑 Admins<span class="cnt" id="cnt-admins">…</span></button>
+</div>
+
+<main>
+
+  <!-- PRODUCTS -->
+  <div class="tab-panel active" id="panel-products">
+    <div class="sh">
+      <span class="sh-title">All Products</span>
+      <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center">
+        <div class="sb"><input type="text" id="productSearch" placeholder="Search…" oninput="filterProducts()"></div>
+        <button class="btn btn-primary" onclick="openProductModal()">＋ Add Product</button>
+      </div>
+    </div>
+    <div id="productsContent"><div class="spin-wrap"><div class="spin"></div> Loading products…</div></div>
+  </div>
+
+  <!-- USERS -->
+  <div class="tab-panel" id="panel-users">
+    <div class="sh">
+      <span class="sh-title">All Users</span>
+      <div class="sb"><input type="text" id="userSearch" placeholder="Search…" oninput="filterUsers()"></div>
+    </div>
+    <div id="usersContent"><div class="spin-wrap"><div class="spin"></div> Loading users…</div></div>
+  </div>
+
+  <!-- ORDERS -->
+  <div class="tab-panel" id="panel-orders">
+    <div class="sh"><span class="sh-title">All Orders</span></div>
+    <div id="ordersContent"><div class="spin-wrap"><div class="spin"></div> Loading orders…</div></div>
+  </div>
+
+  <!-- ADMINS -->
+  <div class="tab-panel" id="panel-admins">
+    <div class="sh">
+      <span class="sh-title">Admin Emails</span>
+      <button class="btn btn-primary" onclick="openAdminModal()">＋ Add Admin</button>
+    </div>
+    <div id="adminsContent"><div class="spin-wrap"><div class="spin"></div> Loading admins…</div></div>
+  </div>
+
+</main>
+
+<!-- PRODUCT MODAL -->
+<div class="mo" id="productModal">
+  <div class="mc">
+    <h3><button class="xbtn" onclick="closeModal('productModal')">×</button><span id="pmTitle">Add Product</span></h3>
+    <input type="hidden" id="productId">
+    <div class="fr">
+      <div class="fg"><label>Name *</label><input type="text" id="pName" placeholder="Fresh Apples"></div>
+      <div class="fg"><label>Category</label><input type="text" id="pCat" placeholder="Fruits"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Price (₹) *</label><input type="number" id="pPrice" min="0" step="0.01"></div>
+      <div class="fg"><label>Stock</label><input type="number" id="pStock" min="0" value="0"></div>
+    </div>
+    <div class="fg"><label>Image (emoji or URL)</label><input type="text" id="pImage" placeholder="🍎"></div>
+    <div class="fg"><label>Description</label><textarea id="pDesc" rows="3" placeholder="Optional…"></textarea></div>
+    <div class="mf">
+      <button class="btn btn-ghost" onclick="closeModal('productModal')">Cancel</button>
+      <button class="btn btn-primary" id="saveProdBtn" onclick="saveProduct()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD ADMIN MODAL -->
+<div class="mo" id="adminModal">
+  <div class="mc">
+    <h3><button class="xbtn" onclick="closeModal('adminModal')">×</button>Add Admin</h3>
+    <div class="fg"><label>Email *</label><input type="email" id="naEmail" placeholder="admin@example.com"></div>
+    <div class="fg"><label>Name (optional)</label><input type="text" id="naName" placeholder="Auto-derived from email"></div>
+    <div class="fg"><label>Password (optional)</label><input type="password" id="naPass" placeholder="Default: Admin@1234"></div>
+    <div class="mf">
+      <button class="btn btn-ghost" onclick="closeModal('adminModal')">Cancel</button>
+      <button class="btn btn-primary" id="saveAdminBtn" onclick="saveAdmin()">Add Admin</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ─── CONFIG — update each time ngrok restarts ───────────────
+  var BASE_API = 'https://34c1-2405-201-e026-501c-d8e0-b214-56c8-f3cc.ngrok-free.app/api';
+
+  var HEADERS = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' };
+
+  // ─── AUTH GUARD ──────────────────────────────────────────────
+  var TOKEN = null, ME = null;
+  (function() {
+    var t = localStorage.getItem('token'), us = localStorage.getItem('user');
+    if (!t || !us) return go();
+    var u; try { u = JSON.parse(us); } catch(e) { return go(); }
+    if (u.role !== 'admin') return go();
+    TOKEN = t; ME = u;
+    document.getElementById('adminAvatar').textContent = (u.name||'A')[0].toUpperCase();
+    document.getElementById('adminName').textContent = u.name || u.email;
+    loadAll();
+  })();
+
+  function go() { window.location.replace('./login.html'); }
+  function handleLogout() { localStorage.removeItem('token'); localStorage.removeItem('user'); go(); }
+
+  function loadAll() { loadProducts(); loadUsers(); loadOrders(); loadAdmins(); }
+
+  // ─── API ─────────────────────────────────────────────────────
+  async function api(method, path, body) {
+    var opts = { method: method, headers: Object.assign({}, HEADERS, { Authorization: 'Bearer ' + TOKEN }) };
+    if (body !== undefined) opts.body = JSON.stringify(body);
+    try {
+      var res = await fetch(BASE_API + path, opts);
+      var data = await res.json();
+      return { ok: res.ok, data: data };
+    } catch(e) {
+      return { ok: false, data: { error: 'Network error.' } };
+    }
+  }
+
+  // ─── TOAST ───────────────────────────────────────────────────
+  var _tt = null;
+  function toast(msg, type) {
+    var el = document.getElementById('toast');
+    el.textContent = msg; el.className = 'show ' + (type||'');
+    if (_tt) clearTimeout(_tt);
+    _tt = setTimeout(function(){ el.className=''; }, 3000);
+  }
+
+  // ─── TABS ────────────────────────────────────────────────────
+  function switchTab(n) {
+    ['products','users','orders','admins'].forEach(function(t) {
+      document.getElementById('tab-'+t).classList.toggle('active', t===n);
+      document.getElementById('panel-'+t).classList.toggle('active', t===n);
+    });
+  }
+
+  // ─── MODALS ──────────────────────────────────────────────────
+  function openModal(id)  { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  document.querySelectorAll('.mo').forEach(function(el) {
+    el.addEventListener('click', function(e){ if(e.target===el) el.classList.remove('open'); });
+  });
+
+  // ─── PRODUCTS ────────────────────────────────────────────────
+  var _products = [];
+
+  async function loadProducts() {
+    var r = await api('GET', '/admin/products');
+    if (!r.ok) { document.getElementById('productsContent').innerHTML = err('products'); return; }
+    _products = r.data.products || [];
+    document.getElementById('cnt-products').textContent = _products.length;
+    renderProducts(_products);
+  }
+
+  function filterProducts() {
+    var q = document.getElementById('productSearch').value.toLowerCase();
+    renderProducts(_products.filter(function(p){
+      return (p.name||'').toLowerCase().includes(q)||(p.category||'').toLowerCase().includes(q);
+    }));
+  }
+
+  function renderProducts(list) {
+    var el = document.getElementById('productsContent');
+    if (!list.length) { el.innerHTML = empty('📭','No products found.'); return; }
+    el.innerHTML = '<div class="table-wrap"><table><thead><tr><th>Img</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead><tbody>' +
+      list.map(function(p) {
+        var iv = p.image||'📦';
+        var ihtml = (iv.startsWith('http')||iv.startsWith('/'))
+          ? '<img src="'+x(iv)+'" style="width:34px;height:34px;object-fit:cover;border-radius:5px;" onerror="this.replaceWith(document.createTextNode(\'📦\'))">'
+          : '<span style="font-size:1.5rem">'+x(iv)+'</span>';
+        var s = parseInt(p.stock)||0;
+        var sc = s>10?'bg':s>0?'ba':'br';
+        return '<tr>'+
+          '<td>'+ihtml+'</td>'+
+          '<td><strong>'+x(p.name)+'</strong></td>'+
+          '<td><span class="badge bb">'+x(p.category||'General')+'</span></td>'+
+          '<td>₹'+parseFloat(p.price).toFixed(2)+'</td>'+
+          '<td><span class="badge '+sc+'">'+s+'</span></td>'+
+          '<td style="white-space:nowrap">'+
+            '<button class="btn btn-ghost btn-sm" onclick="openProductModal('+JSON.stringify(p).replace(/"/g,'&quot;')+')">✏️ Edit</button> '+
+            '<button class="btn btn-danger btn-sm" onclick="delProduct(\''+p._id+'\',\''+x(p.name)+'\')">🗑</button>'+
+          '</td></tr>';
+      }).join('')+'</tbody></table></div>';
+  }
+
+  function openProductModal(p) {
+    document.getElementById('pmTitle').textContent = p ? 'Edit Product' : 'Add Product';
+    document.getElementById('productId').value = p ? p._id : '';
+    document.getElementById('pName').value  = p ? p.name  : '';
+    document.getElementById('pCat').value   = p ? (p.category||'') : '';
+    document.getElementById('pPrice').value = p ? p.price : '';
+    document.getElementById('pStock').value = p ? (p.stock||0) : 0;
+    document.getElementById('pImage').value = p ? (p.image||'') : '';
+    document.getElementById('pDesc').value  = p ? (p.description||'') : '';
+    document.getElementById('saveProdBtn').textContent = p ? 'Save Changes' : 'Save';
+    openModal('productModal');
+  }
+
+  async function saveProduct() {
+    var id = document.getElementById('productId').value;
+    var body = {
+      name: document.getElementById('pName').value.trim(),
+      category: document.getElementById('pCat').value.trim(),
+      price: document.getElementById('pPrice').value,
+      stock: document.getElementById('pStock').value,
+      image: document.getElementById('pImage').value.trim(),
+      description: document.getElementById('pDesc').value.trim(),
+    };
+    if (!body.name||!body.price) { toast('Name and price are required.','err'); return; }
+    var btn = document.getElementById('saveProdBtn');
+    btn.disabled=true; btn.textContent='…';
+    var r = id ? await api('PUT','/admin/products/'+id,body) : await api('POST','/admin/products',body);
+    btn.disabled=false; btn.textContent=id?'Save Changes':'Save';
+    if (r.ok) { toast(id?'Product updated.':'Product created.','ok'); closeModal('productModal'); loadProducts(); }
+    else toast(r.data.error||'Save failed.','err');
+  }
+
+  async function delProduct(id, name) {
+    if (!confirm('Delete "'+name+'"?')) return;
+    var r = await api('DELETE','/admin/products/'+id);
+    if (r.ok) { toast('Deleted.','ok'); loadProducts(); }
+    else toast(r.data.error||'Delete failed.','err');
+  }
+
+  // ─── USERS ───────────────────────────────────────────────────
+  var _users = [];
+
+  async function loadUsers() {
+    var r = await api('GET','/admin/users');
+    if (!r.ok) { document.getElementById('usersContent').innerHTML = err('users'); return; }
+    _users = r.data.users||[];
+    document.getElementById('cnt-users').textContent = _users.length;
+    renderUsers(_users);
+  }
+
+  function filterUsers() {
+    var q = document.getElementById('userSearch').value.toLowerCase();
+    renderUsers(_users.filter(function(u){
+      return (u.name||'').toLowerCase().includes(q)||(u.email||'').toLowerCase().includes(q)||(u.phone||'').includes(q);
+    }));
+  }
+
+  function renderUsers(list) {
+    var el = document.getElementById('usersContent');
+    if (!list.length) { el.innerHTML = empty('👥','No users found.'); return; }
+
+    // Pending vendor requests — drive the orange dot on the tab
+    var pending = list.filter(function(u){ return u.wants_vendor && u.role !== 'vendor' && u.role !== 'admin'; });
+    var dot = document.getElementById('vendor-dot');
+    if (dot) dot.style.display = pending.length ? 'inline-block' : 'none';
+
+    var banner = pending.length
+      ? '<div style="background:#fff3e0;border:1px solid #ffb74d;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:.85rem;color:#e65100;">'+
+          '🏪 <strong>'+pending.length+' vendor request'+(pending.length>1?'s':'')+' pending</strong> — rows highlighted in amber are waiting for vendor activation.'+
+        '</div>'
+      : '';
+
+    el.innerHTML = banner +
+      '<div class="table-wrap"><table><thead><tr>'+
+        '<th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th>'+
+      '</tr></thead><tbody>' +
+      list.map(function(u) {
+        var isAdmin     = u.role === 'admin';
+        var isVendor    = u.role === 'vendor';
+        var blocked     = u.blocked === true;
+        var wantsVendor = !!u.wants_vendor && !isVendor && !isAdmin;
+        var joined      = u.created_at ? new Date(u.created_at).toLocaleDateString('en-IN') : '—';
+        var roleCls     = isAdmin ? 'ba' : isVendor ? 'bb' : 'bgr';
+        var nameTd      = '<strong>'+x(u.name||'—')+'</strong>'
+          + (wantsVendor ? ' <span class="badge ba" title="Business: '+x(u.business_name||'—')+'">🏪 Vendor Req.</span>' : '');
+        var bizTd       = wantsVendor && u.business_name
+          ? '<br><span style="font-size:.72rem;color:var(--gray4)">🏪 '+x(u.business_name)+'</span>' : '';
+
+        var actions;
+        if (isAdmin) {
+          actions = '<span style="color:var(--gray3);font-size:.78rem">—</span>';
+        } else {
+          var blockBtn = blocked
+            ? '<button class="btn btn-primary btn-sm" onclick="toggleBlock(\''+u._id+'\',false)">✅ Unblock</button> '
+            : '<button class="btn btn-warn btn-sm" onclick="toggleBlock(\''+u._id+'\',true)">🚫 Block</button> ';
+          var vendorBtn = !isVendor
+            ? '<button class="btn btn-sm" style="background:'+(wantsVendor?'#1565c0':'#e3f2fd')+';color:'+(wantsVendor?'#fff':'#1565c0')+';border:1px solid #90caf9;" onclick="makeVendor(\''+u._id+'\',\''+x(u.name||u.email)+'\')">'+(wantsVendor?'🏪 Approve':'→ Vendor')+'</button> '
+            : '<span class="badge bb">vendor ✓</span> ';
+          var delBtn = '<button class="btn btn-danger btn-sm" onclick="delUser(\''+u._id+'\',\''+x(u.name||u.email)+'\')">🗑</button>';
+          actions = blockBtn + vendorBtn + delBtn;
+        }
+
+        return '<tr style="'+(wantsVendor?'background:#fff8e1;':'')+'">'
+          +'<td>'+nameTd+bizTd+'</td>'
+          +'<td>'+x(u.email||'—')+'</td>'
+          +'<td>'+x(u.phone||'—')+'</td>'
+          +'<td><span class="badge '+roleCls+'">'+x(u.role||'user')+'</span></td>'
+          +'<td><span class="badge '+(blocked?'br':'bg')+'">'+(blocked?'Blocked':'Active')+'</span></td>'
+          +'<td>'+joined+'</td>'
+          +'<td style="white-space:nowrap">'+actions+'</td>'
+          +'</tr>';
+      }).join('')
+      +'</tbody></table></div>';
+  }
+
+  async function toggleBlock(id, block) {
+    var r = await api('POST','/admin/users/'+id+(block?'/block':'/unblock'));
+    if (r.ok) { toast(block?'Blocked.':'Unblocked.','ok'); loadUsers(); }
+    else toast(r.data.error||'Failed.','err');
+  }
+
+  async function makeVendor(id, name) {
+    if (!confirm('Approve "'+name+'" as a vendor?')) return;
+    var r = await api('POST','/admin/users/'+id+'/make-vendor');
+    if (r.ok) { toast(name+' is now a vendor.','ok'); loadUsers(); }
+    else toast(r.data.error||'Failed.','err');
+  }
+
+  async function delUser(id, name) {
+    if (!confirm('Delete user "'+name+'"?')) return;
+    var r = await api('DELETE','/admin/users/'+id);
+    if (r.ok) { toast('User deleted.','ok'); loadUsers(); }
+    else toast(r.data.error||'Delete failed.','err');
+  }
+
+  // ─── ORDERS ──────────────────────────────────────────────────
+  async function loadOrders() {
+    var r = await api('GET','/admin/orders');
+    if (!r.ok) { document.getElementById('ordersContent').innerHTML = err('orders'); return; }
+    var orders = r.data.orders||[];
+    document.getElementById('cnt-orders').textContent = orders.length;
+    var el = document.getElementById('ordersContent');
+    if (!orders.length) { el.innerHTML = empty('📭','No orders yet.'); return; }
+    var sm = {pending:'ba',processing:'bb',shipped:'bb',delivered:'bg',cancelled:'br'};
+    el.innerHTML = '<div class="table-wrap"><table><thead><tr><th>Order ID</th><th>User ID</th><th>Items</th><th>Total</th><th>Status</th><th>Date</th></tr></thead><tbody>' +
+      orders.map(function(o) {
+        var s = (o.status||'pending').toLowerCase();
+        var date = o.placed_at ? new Date(o.placed_at).toLocaleDateString('en-IN') : '—';
+        return '<tr>'+
+          '<td><code style="font-size:.75rem;color:var(--gray4)">…'+String(o._id).slice(-8)+'</code></td>'+
+          '<td><code style="font-size:.75rem">…'+String(o.user_id||'').slice(-8)+'</code></td>'+
+          '<td>'+(Array.isArray(o.items)?o.items.length:'—')+' item(s)</td>'+
+          '<td>₹'+parseFloat(o.total_amount||o.total||0).toFixed(2)+'</td>'+
+          '<td><span class="badge '+(sm[s]||'bgr')+'">'+s+'</span></td>'+
+          '<td>'+date+'</td>'+
+          '</tr>';
+      }).join('')+'</tbody></table></div>';
+  }
+
+  // ─── ADMINS ──────────────────────────────────────────────────
+  async function loadAdmins() {
+    var r = await api('GET','/admin/admins');
+    if (!r.ok) { document.getElementById('adminsContent').innerHTML = err('admins'); return; }
+    var emails = r.data.admin_emails||[];
+    document.getElementById('cnt-admins').textContent = emails.length;
+    var el = document.getElementById('adminsContent');
+    if (!emails.length) { el.innerHTML = empty('🔑','No admins found.'); return; }
+    el.innerHTML = '<div class="table-wrap"><table><thead><tr><th>#</th><th>Email</th><th>Actions</th></tr></thead><tbody>' +
+      emails.map(function(email, i) {
+        var isSelf = ME && email === ME.email;
+        return '<tr>'+
+          '<td>'+(i+1)+'</td>'+
+          '<td>'+x(email)+(isSelf?' <span class="badge bg">you</span>':'')+' </td>'+
+          '<td>'+(isSelf
+            ? '<span style="color:var(--gray3);font-size:.78rem">—</span>'
+            : '<button class="btn btn-danger btn-sm" onclick="removeAdmin(\''+x(email)+'\')">🗑 Remove</button>'
+          )+'</td></tr>';
+      }).join('')+'</tbody></table></div>';
+  }
+
+  function openAdminModal() {
+    ['naEmail','naName','naPass'].forEach(function(id){ document.getElementById(id).value=''; });
+    openModal('adminModal');
+  }
+
+  async function saveAdmin() {
+    var email = document.getElementById('naEmail').value.trim();
+    if (!email) { toast('Email required.','err'); return; }
+    var btn = document.getElementById('saveAdminBtn');
+    btn.disabled=true; btn.textContent='…';
+    var body = { email: email };
+    var name = document.getElementById('naName').value.trim();
+    var pass = document.getElementById('naPass').value;
+    if (name) body.name = name;
+    if (pass) body.password = pass;
+    var r = await api('POST','/admin/admins',body);
+    btn.disabled=false; btn.textContent='Add Admin';
+    if (r.ok) { toast('Admin added.','ok'); closeModal('adminModal'); loadAdmins(); }
+    else toast(r.data.error||'Failed.','err');
+  }
+
+  async function removeAdmin(email) {
+    if (!confirm('Remove "'+email+'" from admins?')) return;
+    var r = await api('POST','/admin/admins/remove',{ email: email });
+    if (r.ok) { toast('Removed.','ok'); loadAdmins(); }
+    else toast(r.data.error||'Failed.','err');
+  }
+
+  // ─── UTILS ───────────────────────────────────────────────────
+  function x(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function empty(ico, msg) { return '<div class="empty"><div class="ico">'+ico+'</div>'+msg+'</div>'; }
+  function err(what) { return '<div class="empty"><div class="ico">⚠️</div>Failed to load '+what+'. Check console.</div>'; }
+</script>
+</body>
+</html>

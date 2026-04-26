@@ -17,16 +17,13 @@ from routes.cart     import cart_bp
 from routes.orders   import orders_bp
 from routes.wishlist import wishlist_bp
 from routes.payment  import payments_bp
+from routes.admin    import admin_bp
+from routes.vendor   import vendor_bp
 
 app = Flask(__name__)
-
-# Allow all origins — tightened per-route in production
 CORS(app, supports_credentials=True, origins="*")
 
 
-# ── Intercept every OPTIONS preflight and return 200 immediately ──────────────
-# Browsers send OPTIONS before every cross-origin POST/PUT/DELETE.
-# If Flask doesn't respond with CORS headers, the real request is never sent.
 @app.before_request
 def handle_preflight():
     if request.method == "OPTIONS":
@@ -40,7 +37,6 @@ def handle_preflight():
         return response
 
 
-# ── Inject CORS headers on every response (including 4xx / 5xx) ──────────────
 @app.after_request
 def apply_cors(response):
     origin = request.headers.get("Origin", "*")
@@ -51,7 +47,6 @@ def apply_cors(response):
     return response
 
 
-# ── Catch all unhandled exceptions — return JSON so CORS headers are applied ──
 @app.errorhandler(Exception)
 def handle_exception(e):
     import traceback
@@ -59,7 +54,6 @@ def handle_exception(e):
     response = jsonify({"error": "Internal server error", "detail": str(e)})
     response.status_code = 500
     return response
-# ─────────────────────────────────────────────────────────────────────────────
 
 
 app.register_blueprint(auth_bp)
@@ -68,6 +62,8 @@ app.register_blueprint(cart_bp)
 app.register_blueprint(orders_bp)
 app.register_blueprint(wishlist_bp)
 app.register_blueprint(payments_bp)
+app.register_blueprint(admin_bp)
+app.register_blueprint(vendor_bp)
 
 
 @app.route("/health", methods=["GET"])
@@ -93,40 +89,95 @@ def seed_products():
     print(f"Seeded {len(sample)} sample products.")
 
 
-def seed_admin():
+def seed_admins():
     """
-    Creates a default admin account on first startup if none exists.
-    Set ADMIN_EMAIL and ADMIN_PASSWORD in .env to change the defaults.
+    Seeds all admin accounts from ADMIN_EMAILS (comma-separated) in .env.
+    Falls back to ADMIN_EMAIL for backwards compatibility.
+    All admins get password from ADMIN_PASSWORD in .env (default: Admin@1234).
     """
-    db             = get_db()
-    admin_email    = os.getenv("ADMIN_EMAIL",    "admin@freshmart.com")
-    admin_password = os.getenv("ADMIN_PASSWORD", "Admin@1234")
-
-    if db.users.find_one({"role": "admin"}):
-        return
-
     import bcrypt
     from datetime import datetime
-    hashed = bcrypt.hashpw(admin_password.encode(), bcrypt.gensalt()).decode()
-    db.users.insert_one({
-        "name":              "Admin",
-        "email":             admin_email,
-        "password_hash":     hashed,
-        "role":              "admin",
-        "phone":             "",
-        "primary_address":   {},
-        "secondary_address": {},
-        "created_at":        datetime.utcnow(),
-        "updated_at":        datetime.utcnow(),
-    })
-    print(f"Admin account created: {admin_email}")
-    print("  Change credentials via ADMIN_EMAIL / ADMIN_PASSWORD in .env")
+
+    db             = get_db()
+    admin_password = os.getenv("ADMIN_PASSWORD", "Admin@1234")
+    admin_emails   = [e.strip().lower() for e in os.getenv("ADMIN_EMAILS", "").split(",") if e.strip()]
+
+    legacy = os.getenv("ADMIN_EMAIL", "admin@freshmart.com").strip().lower()
+    if legacy and legacy not in admin_emails:
+        admin_emails.append(legacy)
+
+    for email in admin_emails:
+        if not db.admin_emails.find_one({"email": email}):
+            db.admin_emails.insert_one({"email": email, "added_at": datetime.utcnow()})
+
+        existing = db.users.find_one({"email": email})
+        if not existing:
+            hashed = bcrypt.hashpw(admin_password.encode(), bcrypt.gensalt()).decode()
+            db.users.insert_one({
+                "name":              email.split("@")[0].capitalize(),
+                "email":             email,
+                "password_hash":     hashed,
+                "role":              "admin",
+                "phone":             "",
+                "primary_address":   {},
+                "secondary_address": {},
+                "created_at":        datetime.utcnow(),
+                "updated_at":        datetime.utcnow(),
+            })
+            print(f"  Admin created: {email}")
+        elif existing.get("role") != "admin":
+            db.users.update_one({"email": email}, {"$set": {"role": "admin"}})
+            print(f"  Promoted to admin: {email}")
+
+    if admin_emails:
+        print(f"Admins ready: {', '.join(admin_emails)}")
+
+
+def seed_vendors():
+    """
+    Seeds vendor accounts from VENDOR_EMAILS (comma-separated) in .env.
+    All vendors get password from VENDOR_PASSWORD (default: Vendor@1234).
+    Format: VENDOR_EMAILS=alice@shop.com,bob@store.com
+    Optional display names: VENDOR_NAMES=Alice Store,Bob Store  (same order)
+    """
+    import bcrypt
+    from datetime import datetime
+
+    db              = get_db()
+    vendor_password = os.getenv("VENDOR_PASSWORD", "Vendor@1234")
+    vendor_emails   = [e.strip().lower() for e in os.getenv("VENDOR_EMAILS", "").split(",") if e.strip()]
+    vendor_names    = [n.strip() for n in os.getenv("VENDOR_NAMES", "").split(",")]
+
+    for i, email in enumerate(vendor_emails):
+        display_name = vendor_names[i] if i < len(vendor_names) and vendor_names[i] else email.split("@")[0].capitalize()
+        existing = db.users.find_one({"email": email})
+        if not existing:
+            hashed = bcrypt.hashpw(vendor_password.encode(), bcrypt.gensalt()).decode()
+            db.users.insert_one({
+                "name":              display_name,
+                "email":             email,
+                "password_hash":     hashed,
+                "role":              "vendor",
+                "phone":             "",
+                "primary_address":   {},
+                "secondary_address": {},
+                "created_at":        datetime.utcnow(),
+                "updated_at":        datetime.utcnow(),
+            })
+            print(f"  Vendor created: {email} ({display_name})")
+        elif existing.get("role") not in ("vendor", "admin"):
+            db.users.update_one({"email": email}, {"$set": {"role": "vendor"}})
+            print(f"  Promoted to vendor: {email}")
+
+    if vendor_emails:
+        print(f"Vendors ready: {', '.join(vendor_emails)}")
 
 
 if __name__ == "__main__":
     connect_db()
     seed_products()
-    seed_admin()
+    seed_admins()
+    seed_vendors()
     port  = int(os.getenv("PORT", 5000))
     debug = os.getenv("FLASK_ENV", "development") == "development"
     print(f"Server running on http://localhost:{port}")

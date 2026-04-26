@@ -1,6 +1,6 @@
 from datetime import datetime
 
-ROLES = ("user", "admin")
+ROLES = ("user", "admin", "vendor")
 
 
 class User:

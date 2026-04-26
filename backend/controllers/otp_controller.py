@@ -32,11 +32,23 @@ def _normalize_phone(phone: str) -> str:
     return phone
 
 def send_otp(data: dict) -> tuple[dict, int]:
-    phone = (data.get("phone") or "").strip()
-    email = (data.get("email") or "").strip().lower()
+    phone   = (data.get("phone")   or "").strip()
+    email   = (data.get("email")   or "").strip().lower()
+    context = (data.get("context") or "").strip().lower()  # "login" | "register" | ""
 
     if not phone and not email:
         return {"error": "phone or email is required."}, 400
+
+    # For login OTPs, verify the account exists before burning an SMS/email
+    if context == "login":
+        db = get_db()
+        if phone:
+            normalised = _normalize_phone(phone.replace(" ", "").replace("-", ""))
+            if not db.users.find_one({"phone": normalised}):
+                return {"error": "No account found for this phone number. Please register first."}, 404
+        elif email:
+            if not db.users.find_one({"email": email}):
+                return {"error": "No account found for this email. Please register first."}, 404
 
     otp = _generate_otp()
     db  = get_db()
