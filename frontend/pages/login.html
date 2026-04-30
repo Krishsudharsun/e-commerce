@@ -611,7 +611,7 @@
             <label>Password</label>
             <div class="input-wrap">
               <span class="input-icon">🔒</span>
-              <input id="regPassword" type="password" placeholder="Min. 6 characters" />
+              <input id="regPassword" type="password" placeholder="Min 8 characters" />
               <span class="toggle-pw" onclick="togglePw('regPassword',this)">👁</span>
             </div>
           </div>
@@ -668,7 +668,7 @@
               <label>Street / House No.</label>
               <div class="input-wrap">
                 <span class="input-icon">🏠</span>
-                <input id="regStreet" type="text" placeholder="e.g. 12, Anna Nagar" />
+                <input id="regStreet" type="text" placeholder="e.g. 12, Periyar Street" />
               </div>
             </div>
             <div class="form-group">
@@ -709,10 +709,8 @@
 
   <script>
     // ─── CONFIG ────────────────────────────────────────────────────────────────
-    // Replace YOUR_NGROK_URL with your current ngrok forwarding URL, e.g.:
-    //   https://abc123.ngrok-free.app
-    // Keep /api at the end. Update this every time ngrok restarts.
-    var API = 'https://115f-49-37-195-104.ngrok-free.app/api';
+   // Keep /api at the end. Update this every time ngrok restarts.
+    var API = 'https://28bf-49-37-194-88.ngrok-free.app/api';
 
     // Common headers for every fetch call — Content-Type + ngrok bypass
     var HEADERS = {

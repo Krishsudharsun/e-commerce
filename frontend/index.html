@@ -134,7 +134,8 @@
           </div>
         </div>
         <button onclick="handleLogout()"
-          style="width:100%;margin-top:16px;padding:11px;border:none;border-radius:8px;background:#e02020;color:#fff;font-family:'Inter',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;">Sign Out</button>
+          style="width:100%;margin-top:16px;padding:11px;border:none;border-radius:8px;background:#e02020;color:#fff;font-family:'Inter',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;">Sign
+          Out</button>
       </div>
     </div>
   </div>
@@ -538,9 +539,7 @@
             <button class="wishlist-btn"
               onclick="toggleWishlistByName(this,'Fresh Mint Leaves',1,'🌿')">&#9825;</button>
             <div class="card-img-wrap">
-              <img
-                src="assets/img/items/mint.jpg"
-                alt="Fresh Mint">
+              <img src="assets/img/items/mint.jpg" alt="Fresh Mint">
             </div>
             <div class="card-body">
               <div class="card-name">Fresh Mint-Good Quality</div>
@@ -701,16 +700,13 @@
     </div>
   </div>
 
-  <!-- ── TOAST ── -->
   <div id="toastContainer"
     style="position:fixed;bottom:22px;right:22px;z-index:99999;display:flex;flex-direction:column;gap:7px;"></div>
 
   <script>
-    // ── ALL APP CODE — runs before app.js so errors there don't block us ──
-    var BASE_API = 'https://115f-49-37-195-104.ngrok-free.app/api';
+    var BASE_API = 'https://28bf-49-37-194-88.ngrok-free.app/api';
     var state = { token: null, user: null, cart: [], wishlist: [] };
 
-    // ── INIT ────────────────────────────────────────────────
     (function init() {
       var token = localStorage.getItem('token');
       var userStr = localStorage.getItem('user');
@@ -781,7 +777,7 @@
     // ── API HELPER ───────────────────────────────────────────
     async function apiCall(path, opts) {
       opts = opts || {};
-      var headers = { 'Content-Type': 'application/json','ngrok-skip-browser-warning': 'true' };
+      var headers = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' };
       if (state.token) headers['Authorization'] = 'Bearer ' + state.token;
       var res = await fetch(BASE_API + path, Object.assign({}, opts, { headers: headers }));
       var data = await res.json();
@@ -801,12 +797,23 @@
     // ── FIND OR CREATE PRODUCT ───────────────────────────────
     async function findOrCreateProduct(name, price, image) {
       var r = await apiCall('/products/');
-      if (r.ok) {
-        var found = r.data.products.find(function (p) { return p.name.toLowerCase() === name.toLowerCase(); });
-        if (found) return found.id;
-      }
-      var cr = await apiCall('/products/', { method: 'POST', body: JSON.stringify({ name: name, price: price, description: name, image: image, category: 'Groceries', stock: 999 }) });
-      return cr.ok ? cr.data.product.id : null;
+      if (!r.ok) { toast('Could not load products.', 'error'); return null; }
+
+      // Try exact name match first
+      var found = r.data.products.find(function (p) {
+        return p.name.toLowerCase() === name.toLowerCase();
+      });
+      if (found) return found.id;
+
+      // Try partial match (e.g. "Fresh Milk" matches "Milk")
+      found = r.data.products.find(function (p) {
+        return p.name.toLowerCase().includes(name.toLowerCase())
+          || name.toLowerCase().includes(p.name.toLowerCase());
+      });
+      if (found) return found.id;
+
+      toast(name + ' is not available.', 'error');
+      return null;
     }
 
     // ── CART ─────────────────────────────────────────────────
@@ -956,7 +963,6 @@
         document.getElementById('savedAddressBar').style.display = 'block';
         // Auto-fill primary by default
         fillAddress('primary');
-        // Show secondary button only if secondary address exists
         var hasSecondary = u.secondary_address && u.secondary_address.city;
         var secBtn = document.getElementById('btnUseSecondary');
         if (secBtn) secBtn.style.display = hasSecondary ? 'block' : 'none';
